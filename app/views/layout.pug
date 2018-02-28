@@ -1,0 +1,176 @@
+doctype html
+html
+	head
+		meta(name="viewport", charset="utf-8")
+		title= appTitle
+		link(rel="icon" href="/img/favicon.ico" type="image/x-icon")
+		link(rel="stylesheet" href="/stylesheets/style.css")
+		link(href="https://fonts.googleapis.com/css?family=Roboto", rel="stylesheet")
+		script(type="text/javascript", src="/scripts/jquery-3.2.1.min.js")
+		style(type="text/css") #{css}
+			
+			
+	body
+		input(type="hidden", value= data, id="data")
+		block content
+			
+			div.tb-input
+				div
+					label(for="breath") 
+						p Tempo
+
+					input.mod#breath(type="range", min="3000", max="5000", value=""+breath+"000", step="1000") 
+				
+			div(style="visibility: hidden;")
+				label Hold length
+				input.mod#hold(type="range", min="1000", max="3000", value=""+hold+"000", step="1000") 
+			div.container
+				each lung, i in amount
+					div.lung(class="lung_"+i+"", title= mode)
+
+		script(type="text/javascript").
+			// JSON transition css attributes
+			const data = JSON.parse($('#data').val());
+			// theme index
+			const index = `#{index}`
+			// for className nodeList
+			const alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
+			// number of transition properties in given theme
+			var tpLength = `#{tpLength}`;
+			// how long to inhale or exhale
+			var time = parseInt($('#breath').val(), 10);
+			// how long to hold breath
+			var hold = parseInt($('#hold').val(), 10),
+			// number of divs in theme
+			arrLength = data[index].amount,
+			
+			// predefine setInterval variable
+			setBreath, setSpeed;
+			
+			function switchBreath() {
+				$('.lung').each(function(i, l){
+					// either 'in' or 'out' 
+					// 'in' has a delay
+					var title = l.getAttribute('title');
+					// each lung div initiated and switched between 'in' or 'out'
+					var breath = new EachBreath(l, title);
+					breath.switched(l, breath.newTitle, breath.newTime, breath.newHold);
+				});
+
+			}
+			function animationLoop(fn, delay) {
+				// https://www.paulirish.com/2011/requestanimationframe-for-smart-animating/
+				var start = new Date().getTime(), handle = {};
+				function loop() {
+					var current = new Date().getTime(),
+					delta = current - start;
+					if (delta >= delay) {
+						fn.call();
+						start = new Date().getTime();
+					}
+					handle.value = requestAnimationFrame(loop);
+					
+				}
+				handle.value = requestAnimationFrame(loop);
+				return handle;
+			}
+			
+			
+			function resetBreath(){
+				// a breath interval is either 'in' or 'out', with the hold value split
+				// evenly between
+				setBreath = animationLoop(switchBreath, time+(hold/2));
+			}
+			function stopInterval(){
+				if (!setBreath) {
+					setBreath = animationLoop(switchBreath, time+(hold/2));
+				}
+				cancelAnimationFrame(setBreath.value);
+				// store vars
+				hold = parseInt($('#hold').val(), 10);
+				time = parseInt($('#breath').val(), 10);
+				// icon placement
+				switch(hold){
+					case 1000:
+						$('.tb-input').css('background-position', 'top 23px left 14px');
+						break;
+					case 2000:
+						$('.tb-input').css('background-position', 'top 23px center');
+						break;
+					case 3000:
+						$('.tb-input').css('background-position', 'top 23px right 14px');
+						break;
+					default:
+						$('.tb-input').css('background-position', 'top 23px center');
+				}
+				resetBreath();
+			}
+			$(document).ready(function(){
+				for (var i = 0; i < arrLength; i++) {
+					var lung = document.getElementsByClassName('lung_'+i+'')[0];
+					addClass(lung, tpLength);
+				}
+				stopInterval();
+			});
+			
+			$(document).on('change', '#breath', function(e){
+				// change hold input (hidden) to scale when breath input changes
+				// calc change
+				var minVal = Math.min(e.target.valueAsNumber, time);
+				var maxVal = Math.max(e.target.valueAsNumber, time);
+				var diff = maxVal - minVal;
+				
+				// if increase
+				if (e.target.valueAsNumber > time) {
+					$('.mod').not('#breath').each(function(i, node){
+						var thisVal = parseInt($(node).val(), 10);
+						$(node).val(thisVal + diff);
+					});
+					
+				} else {
+					// decrease
+					$('.mod').not('#breath').each(function(i, node){
+						var thisVal = parseInt($(node).val(), 10);
+						$(node).val(thisVal - diff);
+					});
+				}
+				
+				// reset clock
+				stopInterval();
+				// store hold var
+				hold = parseInt($('#hold').val(), 10);
+				// store global time var;
+				time = e.target.valueAsNumber;
+
+				// post server vars and reload page
+				$.post('/change/'+index+'/'+time+'/'+hold+'', function(){
+					window.location.href = '/init'
+				})
+			});
+			
+			// for each transition property, add a class to each .lung node with alphabetical character
+			function addClass(node, tpL){
+				for (var i = 0; i < tpL; i++) {
+					node.classList.add(''+alphabet[i]+'');
+				}
+			}
+			function EachBreath(node, title){
+				var newTitle;
+				if (title === 'in') {
+					newTitle = 'out'
+					hold = 0;
+				} else {
+					newTitle = 'in'
+					hold = parseInt($('#hold').val(), 10);
+				}
+				this.newTitle = newTitle;
+				this.newTime = parseInt($('#breath').val(), 10);
+				this.newHold = hold;
+			}
+			EachBreath.prototype.switched = function(node, newTitle, newTime, newHold){
+				node.setAttribute('title', newTitle);
+				// the exhale transform ends before the setBreath interval, leaving half var newHold
+				// the other half is set into the transform-delay style for inhale
+				// if newHold is 0, this transform-delay property statement equates to 0
+				node.setAttribute('style', 'transition-duration: '+ newTime/1000 + 's; transition-delay: '+ (newHold/1000)/2 +'s');
+			}

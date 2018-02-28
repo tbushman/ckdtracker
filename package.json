@@ -1,0 +1,44 @@
+{
+  "name": "ckdtracker",
+  "productName": "ckdtracker",
+  "description": "Electron deployer for custom app",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tbushman/ckdtracker.git"
+  },
+  "authors": [
+    "Tracey Bushman <tracey.bushman@gmail.com>"
+  ],
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "install-app-deps",
+    "start": "./app/node-cmd.cmd && npm install && node ./app/start-electron.js",
+    "pack": "build --dir",
+    "dist": "build --win"
+  },
+  "build": {
+    "appId": "com.electron.ckdtracker",
+    "productName": "ckdtracker",
+    "asar": false,
+    "publish": null,
+    "extraResources": [
+      "extra"
+    ],
+    "win": {
+      "icon": "build/favicon.ico",
+      "target": "nsis",
+      "publisherName": "Open Source Developer, Tracey Bushman"
+    }
+  },
+  "homepage": "https://s3-us-west-2.amazonaws.com/traceybushman/ckdtracker",
+  "devDependencies": {
+    "electron": "^1.8.0",
+    "electron-builder": "^19.47.0",
+    "lodash": "^4.17.4"
+  },
+  "dependencies": {
+    "jquery": "^3.1.1"
+  }
+}
