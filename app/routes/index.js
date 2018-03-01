@@ -32,7 +32,6 @@ router.get('/', function(req, res) {
 				if (err) {
 					return next(err)
 				}
-				console.log(result.measurements[0].data)
 				var dots = [];
 				result = result.toObject();
 				for (var j in result.measurements) {
@@ -55,11 +54,29 @@ router.get('/', function(req, res) {
 	}
 })
 
-/*router.get('/api/:id/:keys', function(req, res, next){
-	return res.render('index', {
-		data: 
+router.get('/api/:key/:keys', function(req, res, next){
+	Patient.findOne({key: req.params.key}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+		if (err) {
+			return next(err)
+		}
+		var dots = [];
+		result = result.toObject();
+		for (var j in result.measurements) {
+			for (var i in result.measurements[j].data) {
+				var datObj = result.measurements[j].data[i];
+				if (Object.keys(datObj).length) {
+					dots.push(datObj)
+				}
+			}
+		}	
+		console.log(dots)
+		return res.render('index', {
+			data: doc.measurements,
+			dots: null
+		})
 	})
-})*/
+	
+})
 function getIntervalFor(key, loc){
 	var intervals = {
 		albumin: {us:{unit: 'g/dL', interval:[2.6,3.9]}, international:{unit: '', interval:[]}},
@@ -162,6 +179,7 @@ router.get('/api/init', function(req, res, next) {
 				key: key,
 				data: [ 
 					{
+						name: key,
 						val: measurements[key],
 						date: moment('2017-08-01').utc().format()
 					} 

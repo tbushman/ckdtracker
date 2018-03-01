@@ -5,6 +5,7 @@ var Measure = new Schema({
 	patient: String,
 	key: String,
 	data: [{
+		name: String,
 		val: Number,
 		date: Date
 	}],
