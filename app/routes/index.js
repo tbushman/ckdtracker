@@ -57,7 +57,8 @@ router.get('/', function(req, res, next) {
 				}	
 				return res.render('index', {
 					data: result,
-					dots: dots
+					dots: dots,
+					keys: Object.keys(result.measurements)
 				});
 			})
 		})
@@ -192,6 +193,7 @@ router.get('/api/init', function(req, res, next) {
 				data: [ 
 					{
 						name: key,
+						index: 0,
 						val: measurements[key],
 						date: moment('2017-08-01').utc().format()
 					} 
@@ -242,5 +244,119 @@ router.get('/api/init', function(req, res, next) {
 }*/
 
 
+router.post('/api/add/:namekey', function(req, res, next){
+	var body = req.body;
+	var keys = Object.keys(body);
+	/*var measurements = {
+		albumin: 2.1,
+		totalProtein: 8.1,
+		globulin: 6.0,
+		bun: 72,
+		creatinine: 2.2,
+		cholesterol: 137,
+		glucose: 96,
+		calcium: 9.1,
+		phosphorus: 5.1,
+		tco2: 17,
+		chloride: 122,
+		potassium: 4.5,
+		sodium: 153,
+		alb_glob_ratio: 0.4,
+		bun_creatinine_ratio: 32.7,
+		na_k_ratio: 34,
+		anion_gap: 19,
+		sdma: 32,
+		wbc: 11.3,
+		rbc: 5.44,
+		hgb: 7.9,
+		hct: 26.0,
+		mcv: 48,
+		mch: 14.5,
+		mchc: 30.4,
+		per_reticulocyte: 0.1,
+		reticulocyte: 5,
+		per_neutrophil: 86,
+		neutrophil: 9718,
+		per_lymphocyte: 3,
+		lymphocyte: 339,
+		per_monocyte: 4,
+		monocyte: 452,
+		per_eosinophil: 7,
+		eosinophil: 791,
+		per_basophil: 0,
+		basophil: 0,
+		platelet: 439
+	}
+	var keys = Object.keys(measurements);*/
+	Patient.findOne({key: req.params.namekey}, function(err, doc){
+		if (err) {
+			return next(err)
+		}
+		
+		if (!err && doc === null) {
+			return res.redirect('/')
+			
+		} else {
+			Patient.findOne({key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}}, {'measurements.$.data.date': {$gte:body.date}}, function(err, measures) {
+				if (err) {
+					return next(err)
+				}
+				var date = body.date
+				body.splice(Object.keys(body).indexOf('date'), 1);
+				if (!err && measures === null) {
+					// new
+					async.waterfall([
+						function(cb){
+							Object.keys(body).forEach(function(key, i){
+								doc.measuremets[key].data.push({
+									name: key,
+									index: doc.measuremets[key].data.length,
+									val: body[key],
+									date: date
+								})
+							})
+							cb(null, doc)
+						}
+					], function(err, doc){
+						if (err) {
+							console.log(err)
+						}
+						doc.save(function(err){
+							if (err) {
+								return next(err)
+							}
+							return res.redirect('/')
+						})
+					})
+					
+					
+					
+					
+				} else {
+					var index = measurements.data[0].index;
+					Object.keys(body).forEach(function(key, i){
+						
+						var query = {key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}};
+						var set = {$set:{}}
+						var k = 'measurements.$.data.'+index+'.val'
+						set.$set[k] = body[key]
+						Patient.findOneAndUpdate(query, set, {new: true, safe: true, multi: true}, function(err, doc){
+							if (err) {
+								return next(err)
+							}
+							return res.redirect('/')
+						})
+					})
+					
+				}
+				
+				
+			})
+			
+			
+		}
+		
+	})
+})
 
 module.exports = router;

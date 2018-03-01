@@ -1,4 +1,3 @@
-- var cats = Object.keys(data.measurements)
 navbar.navbar-default.navbar-fixed-top
 	div.container-fluid
 		div.navbar-header
@@ -30,14 +29,14 @@ navbar.navbar-default.navbar-fixed-top
 								span.i.fa.fa-calendar(aria-hidden="true")
 
 
-				div.col-xs-12.col-sm-3
+				div.col-xs-12.col-sm-2
 					h6 Values:
 					div.dropdown
 						button.btn.btn-default.dropdown-toggle(type="button", id="dropdownMenu1", data-toggle="dropdown", aria-haspopup="true", aria-expanded="true") Reveal Measurements 
 							span.caret
 						ul.dropdown-menu(aria-labelledby="dropdownMenu1")
 							
-							each cat, i in cats
+							each cat, i in keys
 								if (data.measurements[cat].data.length > 0)
 									li.input-group.col-xs-12
 										//input.form-control(name="symbol", type="text")
@@ -52,36 +51,62 @@ navbar.navbar-default.navbar-fixed-top
 												span &nbsp
 												label(for="reveal_"+data.measurements[cat].key) #{data.measurements[cat].key}
 											
-				
-			div.row
-				form.col-xs-12.navbar-form.navbar-left#modal(style="height: 100px; overflow-y: scroll;",action="/add", method="POST", role="form")
+				div.col-xs-12.col-sm-2
+					h6 Add Data:
 					
-					div.col-xs-12.col-sm-1#hidebtn
-						h6 Add Data:
-						
+					div.col-xs-12
+					
+							
 						div.form-group
 							div.input-group
-								button.btn.btn-default(onclick="document.getElementById('modal').style.display = 'block'; document.getElementById('hidebtn').setAttribute('type', 'submit');")
+								a.btn.btn-default#hidebtn(role="button", onclick="document.getElementById('modal').style.display = 'block'; document.getElementById('hidebtn').style.display = 'none';")
 									span Add Data
-					each cat, i in cats
+
+			form.row.navbar-form.navbar-left#modal(style="display: none; height: 100px; overflow-y: scroll;",action="/api/add", method="POST", role="form")
+				
+				div.col-xs-6.col-sm-3.new
+					h6 Date from:
+					div.form-group
+						div.input-group.date#new_date
+							input.form-control(type="text", name="date", data-provide="datepicker")
+							span.input-group-addon
+								span.i.fa.fa-calendar(aria-hidden="true")
+				div.col-xs-5
+					each cat, i in keys
 						
-						div.row
-							div.col-xs-3
-								label(for= data.measurements[cat].key) #{data.measurements[cat].key.toUpperCase()}
-							div.col-xs-9.form-group
-								div.input-group
-									input.block.form-control(type="number", step="0.1", name= data.measurements[cat].key)
+						if (i % 2 === 0)
+							div.row
+								div.col-xs-3
+									label(for= data.measurements[cat].key) #{data.measurements[cat].key.toUpperCase()}
+								div.col-xs-9.form-group
+									div.input-group
+										input.block.form-control(type="number", step="0.1", name= data.measurements[cat].key)
+				
+				div.col-xs-5
+					each cat, i in keys
+						if (i % 2 !== 0)
+							div.row
+								div.col-xs-3
+									label(for= data.measurements[cat].key) #{data.measurements[cat].key.toUpperCase()}
+								div.col-xs-9.form-group
+									div.input-group
+										input.block.form-control(type="number", step="0.1", name= data.measurements[cat].key)
+				div.col-xs-2
+					button.btn.btn-default.block(type="submit", title="Submit new")
+						span Submit data
+
 script(type="text/javascript").
-	$('.revealvalue').change(function(){
+	$(document).on('click', '.revealvalue', function(e){
+		e.preventDefault()
 		var id = $(this).attr('id');
 		var key = id.split('reveal_')[1];
-		if (!this.checked) {
-			$.post('/api/reveal/'+'!{data.measurements[0].patient}'+'/'+key+'/', function(){
-				window.location.href = '/'
-			})
+		if (!$(this).attr('checked')) {
+			$.post('/api/reveal/'+'!{JSON.stringify(data.measurements[0].patient)}'+'/'+key+'/', function(){
+				window.location.href = '/';
+			});
 		} else {
-			$.post('/api/hide/'+'!{data.measurements[0].patient}'+'/'+key+'/', function(){
-				window.location.href = '/'
-			})
+			$.post('/api/hide/'+'!{JSON.stringify(data.measurements[0].patient)}'+'/'+key+'/', function(){
+				window.location.href = '/';
+			});
 		}
 	})
