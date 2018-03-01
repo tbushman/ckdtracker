@@ -80,6 +80,7 @@ function graphIt(dat, dots, w, h){
 	svg.append("g").attr("class", "y axis")
 	.call(d3.axisLeft(y));
 		
+	var mKeys = Object.keys(dat.measurements);
 	var measurement = 
 		svg.selectAll(".measurement")
 		.data(dat.measurements)
@@ -107,8 +108,10 @@ function graphIt(dat, dots, w, h){
 	}
 
 	var label = measurement.append("text")
-		.attr("x", 3).attr("y", function(d){
-			return y(d.val)
+		.attr("x", 3)
+		.attr("y", function(d){
+			console.log(d.data[0].val)
+			return y(d.data[0].val)
 		}).attr("dy", ".35em").text(function (d, i) {
 			return d.key.toUpperCase();
 		});
@@ -130,12 +133,16 @@ function graphIt(dat, dots, w, h){
 		return y(d.val) 
 	})
 	.attr("r", 4)
+	.attr("fill", function(d){
+		console.log(mKeys.indexOf(d.name))
+		return color(d.name)
+	})
 	.on("mouseover", function(d){
 		var getThisDate = getDate(d.date);
 		var displayDate = ''+getThisDate.getMonth()+'/'+getThisDate.getDate()+'/'+getThisDate.getFullYear()+'';
-		var displayVal = '$'+d.val.toFixed(2);
-		//$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='col-xs-12'><h4 class='quote'><strong>"+displayVal+"</strong></h4></div></div>");
-		//$('.tt').show();
+		var displayVal = d.val.toFixed(2);
+		$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='col-xs-12'><h4 class='quote'><strong>"+displayVal+"</strong></h4></div></div>");
+		$('.tt').show();
 		d3.select(this).style("opacity", 1);
 	}).on("mousemove", function(d){
 		var xPosition = d3.mouse(this)[0] + margin.left;
@@ -143,10 +150,10 @@ function graphIt(dat, dots, w, h){
 		if (yPosition > height-(margin.bottom)) {
 			yPosition = yPosition - (margin.bottom)
 		}
-		//$(".tt").css({"left": xPosition+"px", "top": yPosition+"px"})
+		$(".tt").css({"left": xPosition+"px", "top": yPosition+"px"})
 	}).on("mouseout", function(d){
 		d3.select(this).style("opacity", 0);
-		//$(".tt").hide();
+		$(".tt").hide();
 	});
 	/*measureKeys.forEach(function(measure, j){
 		//var path = measure

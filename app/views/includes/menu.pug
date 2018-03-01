@@ -1,3 +1,4 @@
+- var cats = Object.keys(data.measurements)
 navbar.navbar-default.navbar-fixed-top
 	div.container-fluid
 		div.navbar-header
@@ -10,48 +11,66 @@ navbar.navbar-default.navbar-fixed-top
 				h6.subtitle #{appTitle}
 		div.collapse.navbar-collapse#navbar-collapse-1
 			
-			form.navbar-form.navbar-left(action="/add", method="POST", role="form")
-				div.row
-					div.col-xs-6.col-sm-4.from
-						h6 Date from:
-						div.form-group
-							div.input-group.date#start_date
-								input.form-control(type="text", name="start_date", data-provide="datepicker")
-								span.input-group-addon
-									span.i.fa.fa-calendar(aria-hidden="true")
-									
-					div.col-xs-6.col-sm-4.to
-						h6 Date to:
-						div.form-group
-							div.input-group.date#end_date
-								input.form-control(type="text", name="end_date", data-provide="datepicker")
-								span.input-group-addon
-									span.i.fa.fa-calendar(aria-hidden="true")
+			
+			div.row#control
+				div.col-xs-6.col-sm-3.from
+					h6 Date from:
+					div.form-group
+						div.input-group.date#start_date
+							input.form-control(type="text", name="start_date", data-provide="datepicker")
+							span.input-group-addon
+								span.i.fa.fa-calendar(aria-hidden="true")
+								
+				div.col-xs-6.col-sm-3.to
+					h6 Date to:
+					div.form-group
+						div.input-group.date#end_date
+							input.form-control(type="text", name="end_date", data-provide="datepicker")
+							span.input-group-addon
+								span.i.fa.fa-calendar(aria-hidden="true")
 
 
-					div.col-xs-12.col-sm-4
-						h6 Values:
-						div.dropdown
-							button.btn.btn-default.dropdown-toggle(type="button", id="dropdownMenu1", data-toggle="dropdown", aria-haspopup="true", aria-expanded="true") Reveal Measurements 
-								span.caret
-							ul.dropdown-menu(aria-labelledby="dropdownMenu1")
-								- var cats = Object.keys(data.measurements)
-								each cat, i in cats
-									if (data.measurements[cat].data.length > 0)
-										li.input-group.col-xs-12
-											//input.form-control(name="symbol", type="text")
-											div.input-group-addon
-												//button.btn.btn-sm.nomargin(type="submit") Add
-												if (data.measurements[cat].vis)
-													input.revealvalue(type="checkbox", aria-label= data.measurements[cat].key, id="reveal_"+data.measurements[cat].key, checked)
-													span &nbsp
-													label(for="reveal_"+data.measurements[cat].key) #{data.measurements[cat].key}
-												else
-													input.revealvalue(type="checkbox", aria-label= data.measurements[cat].key, id="reveal_"+data.measurements[cat].key)
-													span &nbsp
-													label(for="reveal_"+data.measurements[cat].key) #{data.measurements[cat].key}
-												
-												
+				div.col-xs-12.col-sm-3
+					h6 Values:
+					div.dropdown
+						button.btn.btn-default.dropdown-toggle(type="button", id="dropdownMenu1", data-toggle="dropdown", aria-haspopup="true", aria-expanded="true") Reveal Measurements 
+							span.caret
+						ul.dropdown-menu(aria-labelledby="dropdownMenu1")
+							
+							each cat, i in cats
+								if (data.measurements[cat].data.length > 0)
+									li.input-group.col-xs-12
+										//input.form-control(name="symbol", type="text")
+										div.input-group-addon
+											//button.btn.btn-sm.nomargin(type="submit") Add
+											if (data.measurements[cat].vis)
+												input.revealvalue(type="checkbox", aria-label= data.measurements[cat].key, id="reveal_"+data.measurements[cat].key, checked)
+												span &nbsp
+												label(for="reveal_"+data.measurements[cat].key) #{data.measurements[cat].key}
+											else
+												input.revealvalue(type="checkbox", aria-label= data.measurements[cat].key, id="reveal_"+data.measurements[cat].key)
+												span &nbsp
+												label(for="reveal_"+data.measurements[cat].key) #{data.measurements[cat].key}
+											
+				
+			div.row
+				form.col-xs-12.navbar-form.navbar-left#modal(style="height: 100px; overflow-y: scroll;",action="/add", method="POST", role="form")
+					
+					div.col-xs-12.col-sm-1#hidebtn
+						h6 Add Data:
+						
+						div.form-group
+							div.input-group
+								button.btn.btn-default(onclick="document.getElementById('modal').style.display = 'block'; document.getElementById('hidebtn').setAttribute('type', 'submit');")
+									span Add Data
+					each cat, i in cats
+						
+						div.row
+							div.col-xs-3
+								label(for= data.measurements[cat].key) #{data.measurements[cat].key.toUpperCase()}
+							div.col-xs-9.form-group
+								div.input-group
+									input.block.form-control(type="number", step="0.1", name= data.measurements[cat].key)
 script(type="text/javascript").
 	$('.revealvalue').change(function(){
 		var id = $(this).attr('id');
