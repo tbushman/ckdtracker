@@ -1,10 +1,12 @@
 function graphIt(dat, dots, w, h){
+	
+	
 	// set up size
 	var margin = { top: 100, right: 100, bottom: 50, left: 40};
 	var width = w - margin.left - margin.right;
 	var height = h - margin.top - margin.bottom;
 	// set up chart
-	var color = d3.scale.category10();
+	var color = d3.scaleOrdinal(d3.schemeCategory10);
 	color.domain(dat.measurements.map(function (d) { return d.key; }));
 
 	var svg = d3.select("#chart")
@@ -12,17 +14,51 @@ function graphIt(dat, dots, w, h){
 	.attr("height", height + margin.top + margin.bottom).append("g")
 	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+	function getDate(d) {
+		return new Date(d);
+	}
 	var minDate = d3.min(dots, function(c) { return getDate(c.date); });
 	var maxDate = d3.max(dots, function(c) { return getDate(c.date); });
 	var minVal = d3.min(dots, function(c) { return c.val; });
 	var maxVal = d3.max(dots, function(c) { return c.val; });
-	function getDate(d) {
-		return new Date(d);
-	}
-	// xscale
-	var x = d3.time.scale().range([0, width]);
+
+	$('#start_date').datepicker({
+		startDate: minDate,
+		endDate: maxDate,
+		keyboardNavigation: false,
+		autoclose: true
+	})
+	$('#end_date').datepicker({
+		keyboardNavigation: false,
+		autoclose: true,
+		startDate: minDate,
+		endDate: maxDate
+	})
 	
-	x.domain([
+	// xscale
+	var x = d3.scaleTime().range([0, width]);
+	var y = d3.scaleLinear().range([height, 0]);
+
+	var line = d3.line()
+	//.interpolate("line")
+	.x(function (d, i) {
+		//console.log('line d')
+		//console.log(d.date)
+		//console.log(getDate(d.date))
+		return x(getDate(d.date));
+	})
+	.y(function (d) {
+		console.log(d.val)
+		console.log(y(d.val))
+		return y(d.val);
+	});
+	x.domain(d3.extent(dots, function(d){
+		return getDate(d.date)
+	}))
+	y.domain(d3.extent(dots, function(d){
+		return d.val;
+	}));
+		/*[
 			//moment(
 				getDate(
 					minDate
@@ -34,88 +70,47 @@ function graphIt(dat, dots, w, h){
 					maxDate
 				)
 			//).utc().format()
-	]);
+	]);*/
 	// yscale
-	var y = d3.scale.linear().range([height, 0]);
 
-	var xAxis = d3.svg.axis().scale(x).orient("bottom");		
+	//var xAxis = d3.svg.axis().scale(x).orient("bottom");		
 
 	svg.append("g").attr("class", "x axis")
-	.attr("transform", "translate(0," + height + ")").call(xAxis);
-	//x
-	
-	var yAxis = d3.svg.axis().scale(y).orient("left");
-	
-
-	//console.log('minDatemaxDate')
-	//console.log(minDate, maxDate)
-	console.log(minVal, maxVal)
-	
+	.attr("transform", "translate(0," + height + ")").call(d3.axisBottom(x));
 	svg.append("g").attr("class", "y axis")
-	.call(yAxis)
-	y.domain([
-			maxVal,
-			minVal
-	]);
-	
-
-	//x.domain();
-	var line = d3.svg.line()
-	//.interpolate("line")
-	.x(function (d, i) {
-		//console.log('line d')
-		//console.log(d.date)
-		//console.log(getDate(d.date))
-		return x(getDate(d.date));
-	}).y(function (d) {
-		console.log(d.val)
-		console.log(y(d.val))
-		return y(d.val);
-	});
-	var measureKeys = Object.keys(dat.measurements);
-	
+	.call(d3.axisLeft(y));
+		
 	var measurement = 
 		svg.selectAll(".measurement")
 		.data(dat.measurements)
 		.enter().append("g")
-		.attr("class", function(d, i){
-			return "measurement";
-		})
-		//.selectAll(".measurement_"+measureKeys[j])
-		//.enter()
+		.attr("class", "measurement");
 	
 	var path = measurement.append("path")
-		.datum(function(d){
-			return d.data;
-		})
 		.attr("class", "line")
 		.attr("d", function (d, i) {
-			//console.log('path d')
-			//console.log(line(d))
-
-			//return line(d[measureKeys[i]].data[j]);
-			return line(d);
+			return line(d.data);
 		}).style("stroke", function (d, i) {
-				return color(i);
+			return color(i);
 		});;
-
-	var thispath = path[0];
+		
+	var thispath = path._groups[0];
+	console.log(path._groups)
 	for (var i = 0; i < thispath.length; i++) {
 		var totalLength = thispath[i].getTotalLength();
 		d3.select(thispath[i])
 		.attr("stroke-dasharray", totalLength + " " + totalLength )
 		.attr("stroke-dashoffset", totalLength)
-		.transition().duration(2000).ease("linear").attr("stroke-dashoffset", 0)
+		.transition().duration(2000)
+		//.ease("linear")
+		.attr("stroke-dashoffset", 0)
 	}
 
 	var label = measurement.append("text")
-		.datum(function(d) {
-			return d.data;
-			
-		})
-		.attr("x", 3).attr("dy", ".35em").text(function (d, i) {
-			//console.log(d)
-			return d[i].name.toUpperCase();
+		.attr("x", 3).attr("y", function(d){
+			return y(d.val)
+		}).attr("dy", ".35em").text(function (d, i) {
+			return d.key.toUpperCase();
 		});
 
 

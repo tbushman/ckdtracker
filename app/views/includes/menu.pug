@@ -16,7 +16,7 @@ navbar.navbar-default.navbar-fixed-top
 						h6 Date from:
 						div.form-group
 							div.input-group.date#start_date
-								input.form-control(type="text", name="start_date", data-provide="datepicker", data-date-days-of-week-disabled="[0,6]")
+								input.form-control(type="text", name="start_date", data-provide="datepicker")
 								span.input-group-addon
 									span.i.fa.fa-calendar(aria-hidden="true")
 									
@@ -24,14 +24,45 @@ navbar.navbar-default.navbar-fixed-top
 						h6 Date to:
 						div.form-group
 							div.input-group.date#end_date
-								input.form-control(type="text", name="end_date", data-provide="datepicker", data-date-days-of-week-disabled="[0,6]")
+								input.form-control(type="text", name="end_date", data-provide="datepicker")
 								span.input-group-addon
 									span.i.fa.fa-calendar(aria-hidden="true")
 
 
 					div.col-xs-12.col-sm-4
-						h6 Add a stock:
-						div.input-group.col-xs-12
-							input.form-control(name="symbol", type="text")
-							div.input-group-addon
-								button.btn.btn-sm.nomargin(type="submit") Add
+						h6 Values:
+						div.dropdown
+							button.btn.btn-default.dropdown-toggle(type="button", id="dropdownMenu1", data-toggle="dropdown", aria-haspopup="true", aria-expanded="true") Reveal Measurements 
+								span.caret
+							ul.dropdown-menu(aria-labelledby="dropdownMenu1")
+								- var cats = Object.keys(data.measurements)
+								each cat, i in cats
+									if (data.measurements[cat].data.length > 0)
+										li.input-group.col-xs-12
+											//input.form-control(name="symbol", type="text")
+											div.input-group-addon
+												//button.btn.btn-sm.nomargin(type="submit") Add
+												if (data.measurements[cat].vis)
+													input.revealvalue(type="checkbox", aria-label= data.measurements[cat].key, id="reveal_"+data.measurements[cat].key, checked)
+													span &nbsp
+													label(for="reveal_"+data.measurements[cat].key) #{data.measurements[cat].key}
+												else
+													input.revealvalue(type="checkbox", aria-label= data.measurements[cat].key, id="reveal_"+data.measurements[cat].key)
+													span &nbsp
+													label(for="reveal_"+data.measurements[cat].key) #{data.measurements[cat].key}
+												
+												
+script(type="text/javascript").
+	$('.revealvalue').change(function(){
+		var id = $(this).attr('id');
+		var key = id.split('reveal_')[1];
+		if (!this.checked) {
+			$.post('/api/reveal/'+'!{data.measurements[0].patient}'+'/'+key+'/', function(){
+				window.location.href = '/'
+			})
+		} else {
+			$.post('/api/hide/'+'!{data.measurements[0].patient}'+'/'+key+'/', function(){
+				window.location.href = '/'
+			})
+		}
+	})

@@ -8,7 +8,8 @@ html
 		link(rel='stylesheet', href='/stylesheets/bootstrap.css')
 		link(href="https://fonts.googleapis.com/css?family=Roboto", rel="stylesheet")
 		link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.css")
-		
+		script(type="text/javascript", src="/scripts/jquery-3.2.1.min.js")
+
 		//style(type="text/css") #{css}
 			
 			
@@ -23,8 +24,7 @@ html
 				.container-fluid
 					a.navbar-brand(href="https://github.com/tbushman/ckdtracker", target="_blank") repo
 
-		script(type="text/javascript", src="/scripts/jquery-3.2.1.min.js")
-		script(type="text/javascript", src="https://d3js.org/d3.v3.min.js" charset="utf-8")
+		script(type="text/javascript", src="https://d3js.org/d3.v4.min.js" charset="utf-8")
 		script(type="text/javascript", src="/scripts/moment-with-locales.min.js")
 		script(type="text/javascript", src="/scripts/bootstrap.js")
 		script(type="text/javascript", src="/scripts/bootstrap-datepicker.js")
@@ -53,7 +53,9 @@ html
 				}
 				if ('!{JSON.stringify(dots)}' !== '') {
 					graphIt(!{JSON.stringify(data)}, !{JSON.stringify(dots)}, myWidth, myHeight);
+					
 				}
+				
 			});
 			//$(document).ready()
 			/*$(document).on('click', '.remove', function(){
@@ -72,23 +74,7 @@ html
 			//$.fn.bootstrapDP = datepicker;
 			//$('#start_date > input').val(moment(minDate).format('MM/DD/YYYY'));  
 			//$('#end_date > input').val(moment(maxDate).format('MM/DD/YYYY'));
-			$('#start_date').datepicker({
-				/*format: function(date) {
-					return new Date(date)
-				},*/
-				keyboardNavigation: false,
-					autoclose: true
-			})
-			$('#end_date').datepicker({
-				useCurrent: false,
-				endDate: "0d",
-				todayBtn: "linked",
-				/*format: function(date) {
-					return new Date(date)
-				},*/
-				keyboardNavigation: false,
-					autoclose: true
-			})
+			
 
 			//credit: http://bl.ocks.org/atmccann/8966400, http://bl.ocks.org/mbostock/3884955, http://stackoverflow.com/a/20017009/3530394
 			//http://codepen.io/pdillon/pen/bEgmA, http://codepen.io/jayarjo/pen/gzfyj?editors=0010

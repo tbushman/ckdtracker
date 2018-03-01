@@ -13,7 +13,7 @@ var upload = multer();
 
 dotenv.load();
 
-router.get('/', function(req, res) {
+router.get('/', function(req, res, next) {
 	req.session.data = null;
 	if (req.session.data) {
 		return res.render('index', {
@@ -28,12 +28,25 @@ router.get('/', function(req, res) {
 			if (data.length === 0) {
 				return res.redirect('/api/init');
 			}
-			Patient.findOne({key: 'sophia_bushman'}, {measurements: {$elemMatch: {vis: {$ne: false}}}}, function(err, result){
+			Patient.aggregate([
+				{
+					$project: {
+						measurements: {
+							$filter: {
+								input: '$measurements',
+								as: 'measurements',
+								cond: { $ne: ['$$measurements.vis', false] }
+							}
+						}
+					}
+				}
+			]).exec(function(err, results) {
 				if (err) {
 					return next(err)
 				}
 				var dots = [];
-				result = result.toObject();
+				var result = results[0]
+				//result = result.toObject();
 				for (var j in result.measurements) {
 					for (var i in result.measurements[j].data) {
 						var datObj = result.measurements[j].data[i];
@@ -42,9 +55,6 @@ router.get('/', function(req, res) {
 						}
 					}
 				}	
-				console.log(dots)
-				//req.session.data = results;
-				//req.session.dots = dots;
 				return res.render('index', {
 					data: result,
 					dots: dots
@@ -54,28 +64,30 @@ router.get('/', function(req, res) {
 	}
 })
 
-router.get('/api/:key/:keys', function(req, res, next){
-	Patient.findOne({key: req.params.key}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+router.post('/api/reveal/:namekey/:key', function(req, res, next){
+	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+	var set = {$set:{}};
+	var key = 'measurements.$.'+ req.params.key +'.vis'
+	set.$set[key] = true;
+	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{key: req.params.key}}, set, {new: true, safe: true}, function(err, result) {
 		if (err) {
 			return next(err)
 		}
-		var dots = [];
-		result = result.toObject();
-		for (var j in result.measurements) {
-			for (var i in result.measurements[j].data) {
-				var datObj = result.measurements[j].data[i];
-				if (Object.keys(datObj).length) {
-					dots.push(datObj)
-				}
-			}
-		}	
-		console.log(dots)
-		return res.render('index', {
-			data: doc.measurements,
-			dots: null
-		})
-	})
-	
+		return res.send('ok')
+	}) 
+})
+
+router.post('/api/hide/:namekey/:key', function(req, res, next){
+	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+	var set = {$set:{}};
+	var key = 'measurements.$.'+ req.params.key +'.vis'
+	set.$set[key] = false;
+	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{key: req.params.key}}, set, {new: true, safe: true}, function(err, result) {
+		if (err) {
+			return next(err)
+		}
+		return res.send('ok')
+	}) 
 })
 function getIntervalFor(key, loc){
 	var intervals = {
