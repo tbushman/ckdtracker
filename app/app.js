@@ -12,7 +12,7 @@ var MongoDBStore = require('connect-mongo')(session);
 var Patient = require('./models/patients');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
-
+var promise = require('promise');
 dotenv.load();
 var app = express();
 
@@ -36,9 +36,12 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(id, done) {
   Patient.findOne({_id: id}, function(err, user){
     //console.log(user);
-      if(!err) done(null, user);
-      else done(err, null);
-    });
+    if(!err) {
+			done(null, user);
+		} else {
+			done(err, null);
+		}
+  });
 });
 
 var store = new MongoDBStore(
@@ -59,9 +62,12 @@ var sess = {
 	store: store,
   cookie: { maxAge: 180 * 60 * 1000 }
 }
-
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser(sess.secret));
 app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(session(sess));
 if (app.get('env') === 'production') {
 	app.set('trust proxy', 1) // trust first proxy

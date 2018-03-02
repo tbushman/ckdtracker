@@ -18,6 +18,5 @@ var Measure = new Schema({
 
 
 module.exports = function(db){ 
-	console.log(db)
 	return mongoose.model(db.collection, Measure, db.collection);
 }

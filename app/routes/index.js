@@ -13,229 +13,7 @@ var upload = multer();
 
 dotenv.load();
 
-//for all /api/*
-function ensureAuthenticated(req, res, next) {
-	if (req.isAuthenticated()) { 
-		return next(); 
-	}
-	return res.redirect('/login');
-}
 
-function ensureContent(req, res, next) {
-	//if (req.session.content) {
-	var username = req.params.namekey;
-		req.measure = require('../models/measures.js')({collection: username});
-		req.session.measure = username;
-	//} else {
-		//Publisher.findOne
-	//}
-	return next()
-}
-
-function ensurePublisher(req, res, next) {
-	var username = req.params.namekey;
-	Patient.find({username: req.params.namekey}, function(err, data){
-		if (err) {
-			return next(err)
-		}
-		console.log(data)
-		if (!data || data.length === 0) {
-			return next('route')
-		} else {
-			return next();
-		}
-	})
-}
-
-router.param('namekey', ensureContent);
-
-//router.all(/^(?!\/$)(?!\/register$)(?!\/login$)(?!\/logout$).+/, ensureContent);
-
-router.get('/', function(req, res, next) {
-	req.session.data = null;
-	if (req.session.data) {
-		return res.render('index', {
-			data: req.session.data,
-			dots: req.session.dots
-		})
-	} else {
-		return res.redirect('/view/sophia_bushman')
-	}
-})
-
-router.get('/login', function(req, res, next){
-	var outputPath = url.parse(req.url).pathname;
-	// console.log(outputPath)
-	return res.render('login', { 
-		user: req.user
-	});
-});
-
-router.post('/login', upload.array(), passport.authenticate('local'), function(req, res, next) {
-	var outputPath = url.parse(req.url).pathname;
-	// console.log(outputPath)
-	req.session.username = req.user.username;
-	console.log('authenticated '+req.user.username)
-	console.log(req.isAuthenticated())
-	res.redirect('/')
-});
-
-router.get('/logout', function(req, res) {
-	var outputPath = url.parse(req.url).pathname;
-	req.logout();
-	if (req.user || req.session) {
-		req.user = null;
-		req.session.destroy(function(err){
-			if (err) {
-				req.session = null;
-				//improve error handling
-				return res.redirect('/');
-			} else {
-				req.session = null;
-				return res.redirect('/');
-			}
-		});		
-	} else {
-		return res.redirect('/');
-	}
-});
-
-router.get('/register', function(req, res) {
-	return res.render('register', { } );
-});
-
-
-router.post('/register', upload.array(), function(req, res, next) {
-	Patient.register(new Patient({ name : req.body.name, username: req.body.username }), req.body.password, function(err, user) {
-		if (err) {
-			console.log(err)
-			return res.render('register', {info: "Sorry. That username already exists. Try again."});
-		}
-
-		passport.authenticate('local')(req, res, function () {
-			Patient.findOne({key: req.body.key}, function(error, doc){
-				if (error) {
-					console.log(outputPath)
-					return next(error)
-				}
-				req.session.username = req.body.username;
-				if (req.body.username === 'sophia_bushman'){
-					return res.redirect('/api/init')
-				} else {
-					return res.redirect('/api/add/'+req.body.username+'/0')
-				}
-			})
-		});
-	});
-});
-
-router.get('/view/:namekey', function(req, res, next){
-	
-	req.measure.find({}, function(err, data){
-		if (err) {
-			return next(err)
-		}
-		if (data.length === 0) {
-			if (req.params.namekey === 'sophia_bushman') {
-				res.redirect('/api/init/sophia_bushman')
-			} else {
-				return res.redirect('/');
-			}
-		} else {
-			req.measure.find({vis:{$ne:null}}, function(err, result){
-				if (err) {
-					return next(err)
-				}
-				var dots = [];
-				console.log(result)
-				if (result.length === 0) {
-					console.log(req.isAuthenticated())
-					return res.redirect('/api/add/'+req.session.username+'/0');
-				} else {
-					var keys = [];
-					//result = result.toObject();
-					for (var j in result.measurements) {
-						for (var i in result.measurements[j].data) {
-							var datObj = result.measurements[j].data[i];
-							if (Object.keys(datObj).length) {
-								dots.push(datObj)
-							}
-						}
-						keys.push(result.measurements[j].key)
-					}	
-					//console.log(result.measurements[0].data)
-					return res.render('index', {
-						index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
-						data: data,
-						result: result,
-						dots: dots,
-						keys: keys
-					});
-				}
-				
-			})		}
-		
-	})
-})
-
-router.all('/api/*', ensureAuthenticated);
-
-router.get('/api/checkdate/:namekey/:date', function(req, res, next){
-	var outputPath = url.parse(req.url).pathname;
-	req.measure.find({'data.date': body.date}, function(err, measures) {
-		if (err) {
-			return next(err)
-		}
-		if (!err && measures.length === 0) {
-			return res.send(null)
-		}
-		console.log(measures) 
-		return res.send('ok');
-	})
-})
-
-router.post('/api/reveal/:namekey/:key', function(req, res, next){
-	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
-	var outputPath = url.parse(req.url).pathname;
-	console.log(outputPath) 
-	var set = {$set:{}};
-	var key = 'vis'
-	set.$set[key] = true;
-	req.measure.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
-		if (err) {
-			return next(err)
-		}
-		return res.send('ok')
-	}) 
-})
-
-router.post('/api/hide/:namekey/:key', function(req, res, next){
-	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
-	var outputPath = url.parse(req.url).pathname;
-	console.log(outputPath); 
-	var set = {$set:{}};
-	var key = 'vis'
-	set.$set[key] = false;
-	req.measure.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
-		if (err) {
-			return next(err)
-		}
-		req.measure.find({vis:true},function(err, results) {
-			if (err) {
-				return next(err)
-			}
-			if (results.length === 0) {
-				req.measure.findOneAndUpdate({key: 'sdma'}, {$set: {vis: true}}, {new: true, safe: true, multi: false}, function(err, result) {
-					if (err) {
-						return next(err)
-					}
-				})
-				return res.send('ok')
-			}
-			return res.send('ok')
-		})
-	}) 
-})
 function getIntervalFor(key, loc){
 	var intervals = {
 		albumin: {us:{unit: 'g/dL', interval:[2.6,3.9]}, international:{unit: '', interval:[]}},
@@ -280,13 +58,309 @@ function getIntervalFor(key, loc){
 	return intervals[key][loc]
 }
 
-router.get('/api/init/:namekey', function(req, res, next) {
-	req.measure.find({}, function(err, data){
+//for all /api/*
+function ensureAuthenticated(req, res, next) {
+	if (!req.isAuthenticated()) { 
+		console.log('not auth')
+		return res.redirect('/login');
+		
+	}
+	Patient.find({username: req.user.username}, function(err, data){
 		if (err) {
 			return next(err)
 		}
-		if (data.length > 0) {
-			return res.redirect('/');
+		console.log(data)
+		if (!data || data.length === 0) {
+			return res.redirect('/login');
+		} else {
+			return next();
+		}
+	})
+}
+
+function ensureContent(req, res, next) {
+	var outputPath = url.parse(req.url).pathname;
+	console.log('ensurecontent path')
+
+	if (req.session.measure) {
+		var username = req.session.measure
+		//req.params.namekey ? req.params.namekey : req.user.username;
+		console.log(outputPath, username)
+		require('../models/measures.js')({collection: username}).find({}, function(err, data){
+			if (err) {
+				return next(err)
+			}
+			console.log('ensurecontent data')
+			console.log(data)
+			
+
+			if (!data || data.length === 0) {
+				if (req.isAuthenticated()) {
+					return res.redirect('/api/init/'+username+'')
+				} else {
+					return res.redirect('/register')
+				}
+				
+			}
+			req.measurements = require('../models/measures.js')({collection: username});
+			req.session.measure = username;
+			return next();
+		})
+	} else {
+		if (req.isAuthenticated()) {
+			console.log(outputPath, req.user.username)
+			req.measurements = require('../models/measures.js')({collection: req.user.username});
+			req.session.measure = req.user.username;
+			return res.redirect('/api/view/'+req.user.username+'')
+		} else {
+			return res.redirect('/register')
+		}
+	}
+}
+
+function ensurePublisher(req, res, next) {
+	var username = req.params.namekey;
+	Patient.find({username: username}, function(err, data){
+		if (err) {
+			return next(err)
+		}
+		console.log(data)
+		if (!data || data.length === 0) {
+			return next('route')
+		} else {
+			return next();
+		}
+	})
+}
+
+router.param('namekey', ensurePublisher);
+
+//router.all(/^(?!\/$)(?!\/register$)(?!\/login$)(?!\/logout$).+/, ensureContent);
+
+router.get('/', function(req, res, next) {
+	if (req.isAuthenticated()) {
+		return res.redirect('/api/view/'+req.user.username+'')
+	} else {
+		//return res.redirect('/login');
+		return res.redirect('/register');
+	}
+
+})
+
+router.get('/login', function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	// console.log(outputPath)
+	return res.render('login', { 
+		user: req.user
+	});
+});
+
+router.post('/login', upload.array(), passport.authenticate('local'), 
+	function(req, res, next) {
+	// If this function gets called, authentication was successful.
+	// `req.user` contains the authenticated user.
+	req.session.save(function(){
+		return res.redirect('/api/view/'+req.user.username);
+	});
+});
+
+router.get('/logout', function(req, res) {
+	var outputPath = url.parse(req.url).pathname;
+	req.logout();
+	if (req.user || req.session) {
+		req.user = null;
+		req.session.destroy(function(err){
+			if (err) {
+				req.session = null;
+				//improve error handling
+				return res.redirect('/');
+			} else {
+				req.session = null;
+				return res.redirect('/');
+			}
+		});		
+	} else {
+		return res.redirect('/');
+	}
+});
+
+router.get('/register', function(req, res) {
+	return res.render('register', { } );
+});
+
+
+router.post('/register', upload.array(), function(req, res, next) {
+	Patient.register(new Patient({ name : req.body.name, username: req.body.username }), req.body.password, function(err, user) {
+		if (err) {
+			console.log(err)
+			return res.render('register', {info: "Sorry. That username already exists. Try again."});
+		}
+
+		passport.authenticate('local')(req, res, function () {
+			Patient.findOne({username: req.body.username}, function(error, doc){
+				if (error) {
+					console.log(outputPath)
+					return next(error)
+				}
+				req.session.username = req.body.username;
+				return res.redirect('/api/init/'+req.body.username+'')
+			})
+		});
+	});
+});
+
+router.get('/view/:namekey', function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	if (!req.measurements) {
+		return res.redirect('/')
+	}
+	req.measurements.find({}, function(err, data){
+		if (err) {
+			return next(err)
+		}
+		console.log(data)
+		if (data.length === 0) {
+			return res.redirect('/api/init/'+req.params.namekey+'')
+		} else {
+			req.measurements.find({vis:{$ne:null}}, function(err, result){
+				if (err) {
+					return next(err)
+				}
+				var dots = [];
+				console.log(result)
+				var keys = [];
+				//result = result.toObject();
+				for (var j in result.measurements) {
+					for (var i in result.measurements[j].data) {
+						var datObj = result.measurements[j].data[i];
+						if (Object.keys(datObj).length) {
+							dots.push(datObj)
+						}
+					}
+					keys.push(result.measurements[j].key)
+				}	
+				//console.log(result.measurements[0].data)
+				return res.render('index', {
+					index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
+					data: data,
+					result: result,
+					dots: dots,
+					keys: keys
+				});
+				
+			})		
+		}
+		
+	})
+})
+
+router.all('/api/*', [ensureAuthenticated, ensureContent]);
+
+router.get('/api/view/:namekey', function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	console.log(outputPath)
+	req.measurements.find({}, function(err, data){
+		if (err) {
+			return next(err)
+		}
+		if (data.length === 0) {
+			return res.redirect('/api/init/'+req.params.namekey+'')
+		} else {
+			req.measurements.find({vis:{$ne:null}}, function(err, result){
+				if (err) {
+					return next(err)
+				}
+				var dots = [];
+				console.log(result)
+				var keys = [];
+				//result = result.toObject();
+				for (var j in result.measurements) {
+					for (var i in result.measurements[j].data) {
+						var datObj = result.measurements[j].data[i];
+						if (Object.keys(datObj).length) {
+							dots.push(datObj)
+						}
+					}
+					keys.push(result.measurements[j].key)
+				}	
+				//console.log(result.measurements[0].data)
+				return res.render('index', {
+					index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
+					data: data,
+					result: result,
+					dots: dots,
+					keys: keys
+				});
+				
+			})		
+		}
+		
+	})
+})
+
+router.get('/api/checkdate/:namekey/:date', function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	req.measurements.find({'data.date': body.date}, function(err, measures) {
+		if (err) {
+			return next(err)
+		}
+		if (!err && measures.length === 0) {
+			return res.send(null)
+		}
+		console.log(measures) 
+		return res.send('ok');
+	})
+})
+
+router.post('/api/reveal/:namekey/:key', function(req, res, next){
+	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+	var outputPath = url.parse(req.url).pathname;
+	console.log(outputPath) 
+	var set = {$set:{}};
+	var key = 'vis'
+	set.$set[key] = true;
+	req.measurements.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
+		if (err) {
+			return next(err)
+		}
+		return res.send('ok')
+	}) 
+})
+
+router.post('/api/hide/:namekey/:key', function(req, res, next){
+	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+	var outputPath = url.parse(req.url).pathname;
+	console.log(outputPath); 
+	var set = {$set:{}};
+	var key = 'vis'
+	set.$set[key] = false;
+	req.measurements.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
+		if (err) {
+			return next(err)
+		}
+		req.measurements.find({vis:true},function(err, results) {
+			if (err) {
+				return next(err)
+			}
+			if (results.length === 0) {
+				req.measurements.findOneAndUpdate({key: 'sdma'}, {$set: {vis: true}}, {new: true, safe: true, multi: false}, function(err, result) {
+					if (err) {
+						return next(err)
+					}
+				})
+				return res.send('ok')
+			}
+			return res.send('ok')
+		})
+	}) 
+})
+
+router.get('/api/init/:namekey', function(req, res, next) {
+	var outputPath = url.parse(req.url).pathname;
+	console.log(outputPath)
+	req.measurements.find({}, function(err, data){
+		if (err) {
+			return next(err)
 		}
 		var measurements = {
 			albumin: 2.1,
@@ -328,20 +402,60 @@ router.get('/api/init/:namekey', function(req, res, next) {
 			basophil: 0,
 			platelet: 439
 		}
+		/*var measurements = {
+			albumin: 0,
+			totalProtein: 0,
+			globulin: 0,
+			bun: 0,
+			creatinine: 0,
+			cholesterol: 0,
+			glucose: 0,
+			calcium: 0,
+			phosphorus: 0,
+			tco2: 0,
+			chloride: 0,
+			potassium: 0,
+			sodium: 0,
+			alb_glob_ratio: 0,
+			bun_creatinine_ratio: 0,
+			na_k_ratio: 0,
+			anion_gap: 0,
+			sdma: 0,
+			wbc: 0,
+			rbc: 0,
+			hgb: 0,
+			hct: 0,
+			mcv: 0,
+			mch: 0,
+			mchc: 0,
+			per_reticulocyte: 0,
+			reticulocyte: 0,
+			per_neutrophil: 0,
+			neutrophil: 0,
+			per_lymphocyte: 0,
+			lymphocyte: 0,
+			per_monocyte: 0,
+			monocyte: 0,
+			per_eosinophil: 0,
+			eosinophil: 0,
+			per_basophil: 0,
+			basophil: 0,
+			platelet: 0
+		}*/
 		var keys = Object.keys(measurements);
 		
 		var measurementdata = [];
 		var lookup = ['bun', 'sdma', 'na_k_ratio'];
 		keys.forEach(function(key){
-			var mea = new req.measure({
-				patient: 'sophia_bushman',
+			var mea = new req.measurements({
+				patient: req.user.username,
 				key: key,
 				data: [ 
 					{
 						name: key,
 						index: 0,
 						val: measurements[key],
-						date: moment('2017-08-01').utc().format()
+						date: moment().utc().format()
 					} 
 				],
 				high: getIntervalFor(key, 'us').interval[1],
@@ -361,12 +475,12 @@ router.get('/api/init/:namekey', function(req, res, next) {
 })
 
 router.get('/api/add/:namekey/:index', function(req, res, next){
-	req.measure.find({patient: req.params.namekey}, function(err, doc){
+	req.measurements.find({patient: req.params.namekey}, function(err, data){
 		if (err) {
 			return next(err)
 		}
 		
-		if (!err && doc.length === 0) {
+		if (!err && data.length === 0) {
 			var measurements = {
 				albumin: 0,
 				totalProtein: 0,
@@ -412,7 +526,7 @@ router.get('/api/add/:namekey/:index', function(req, res, next){
 			var measurementdata = [];
 			var lookup = ['sdma'];
 			keys.forEach(function(key){
-				var mea = new req.measure({
+				var mea = new req.measurements({
 					patient: req.params.namekey,
 					key: key,
 					data: [ 
@@ -435,6 +549,30 @@ router.get('/api/add/:namekey/:index', function(req, res, next){
 					}
 				})
 			})
+			return res.redirect('/')
+		} else {
+			var keys = [];
+			for (var i in data) {
+				var dat = {
+					name: key,
+					index: 0,
+					val: measurements[key],
+					date: moment().utc().format()
+				} 
+				data[i].data.push(dat);
+				data[i].save(function(err){
+					if (err) {
+						console.log(err)
+					}
+				})
+				/*req.measurements.findOneAndUpdate({key: data[i].key}, {$push:{data:dat}}, {safe: true, multi: false}, function(err, doc){
+					if (err) {
+						console.log(err)
+					}
+				})*/
+				
+			}
+			return res.redirect('/')
 		}
 	})
 })
@@ -445,7 +583,7 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 	var keys = Object.keys(body);
 	console.log(keys)
 	//var keys = Object.keys(measurements);
-	req.measure.find({}, function(err, data){
+	req.measurements.find({}, function(err, data){
 		if (err) {
 			return next(err)
 		}
@@ -454,7 +592,7 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 			return res.redirect('/')
 			
 		} else {
-			req.measure.find({'data.date': body.date}, function(err, measures) {
+			req.measurements.find({'data.date': body.date}, function(err, measures) {
 				if (err) {
 					return next(err)
 				}
@@ -466,7 +604,7 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 						function(cb){
 							var counter = doc.data.length;
 							data.forEach(function(doc, i){
-								var mea = new req.measure({
+								var mea = new req.measurements({
 									patient: req.params.namekey,
 									key: key,
 									data: [ 
@@ -507,7 +645,7 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 						var set = {$set:{}}
 						var k = 'data.$.val'
 						set.$set[k] = body[key]
-						req.measure.findOneAndUpdate(query, set, {new: true, safe: true, multi: true}, function(err, doc){
+						req.measurements.findOneAndUpdate(query, set, {new: true, safe: true, multi: true}, function(err, doc){
 							if (err) {
 								return next(err)
 							}
