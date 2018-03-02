@@ -9,8 +9,13 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var mongoose = require('mongoose');
 var MongoDBStore = require('connect-mongo')(session);
+var Patient = require('./models/patients');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+
 dotenv.load();
 var app = express();
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -21,6 +26,21 @@ app.locals.appTitle = "CKDTracker";
 app.use(favicon(path.join(__dirname, 'public', 'img', 'favicon.ico')));
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+passport.use(new LocalStrategy(Patient.authenticate()));
+// serialize and deserialize
+passport.serializeUser(function(user, done) {
+  //console.log('serializeUser: ' + user._id);
+  done(null, user._id);
+});
+passport.deserializeUser(function(id, done) {
+  Patient.findOne({_id: id}, function(err, user){
+    //console.log(user);
+      if(!err) done(null, user);
+      else done(err, null);
+    });
+});
+
 var store = new MongoDBStore(
 	{
 		mongooseConnection: mongoose.connection,
@@ -41,6 +61,7 @@ var sess = {
 }
 
 app.use(cookieParser(sess.secret));
+app.use(passport.initialize());
 app.use(session(sess));
 if (app.get('env') === 'production') {
 	app.set('trust proxy', 1) // trust first proxy

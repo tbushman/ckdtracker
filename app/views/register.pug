@@ -1,0 +1,38 @@
+extends layout
+block page
+	- var menu = 'login'
+block content
+	div.container-fluid
+		div.row
+			div.col-xs-9.col-sm6
+				
+				p Already Registered?
+				a.btn.btn-primary(href="/login", role="button", ariaDescription="Log in")
+					span Log in
+				hr
+				p Register
+
+				form.row#form(enctype="multipart/form-data", method="POST", action="/register", style="margin-bottom: 50px")
+					div.col-xs-12
+						div.row
+							div.col-xs-12
+								label Username
+							div.col-xs-12
+								input(type="text", name="username", maxlength="40", placeholder="Alphanumeric username")
+					div.col-xs-12
+						div.row
+							div.col-xs-12
+								label Chart Name
+							div.col-xs-12
+								input(type="text", name="name", placeholder="Name your chart")
+					div.col-xs-12
+						div.row
+							div.col-xs-12
+								label Password
+							div.col-xs-12
+								input(type="password", name="password", minLength="1", placeholder="Any password")
+					div.col-xs-12
+						p
+						button.btn.btn-primary(type="submit", ariaDescription="Register")
+							span Register
+				#info #{info}

@@ -14,7 +14,10 @@ var Measure = new Schema({
 	low: Number,
 	unit: String,
 	vis: Boolean
-});
+}, {pluralize: false});
 
 
-module.exports = Measure;
+module.exports = function(db){ 
+	
+	return mongoose.model(db.collection, Measure, db.collection);
+}

@@ -2,9 +2,10 @@ extends layout
 block page
 block content
 	
-	div.row
-		div#chart.col-xs-12(class='vis')
-			div.tt.panel.panel-sm(style="position: absolute;")
+	div.col-xs-12(id="chart_"+doc._id+"", class='vis')
+		div.tt.panel.panel-sm(style="position: absolute;")
+			
+	
 	div.row
 		each val, index in data
 			div.col-xs-12.col-sm-6.col-md-4
@@ -14,3 +15,185 @@ block content
 						div.col-xs-2.col-sm-3.col-lg-2
 							button.btn.pull-right(role="button", type="submit", class="remove") 
 								i.fa.fa-times(aria-hidden="true")
+	script(type="text/javascript").
+		$(document).on('click', '.submit', function(){
+			var id = $(this).attr('id');
+			$('#modal_'+id.split('submit')[1]+'').submit();
+		})
+		$(document).on('change', '.revealvalue', function(){
+			//e.preventDefault()
+			var id = $(this).attr('id');
+			var key = id.split('reveal_')[1];
+			if (!$(this).attr('checked')) {
+				$.post('/api/reveal/'+'!{result[0].patient}'+'/'+key+'/', function(){
+					window.location.href = '/';
+				});
+			} else {
+				$.post('/api/hide/'+'!{result[0].patient}'+'/'+key+'/', function(){
+					window.location.href = '/';
+				});
+			}
+		})
+		$('.date').datepicker({
+			format: {
+				
+				toDisplay: function (date, format, language) {
+					var d = new Date(date);
+					return d.toISOString();
+				},
+				toValue: function (date, format, language) {
+					var d = new Date(date);
+					return d;
+				}
+			}
+		});
+		
+		function graphIt(dat, dots, w, h){
+			
+			
+			// set up size
+			var margin = { top: 20, right: 20, bottom: 140, left: 40};
+			var width = w - margin.left - margin.right;
+			var height = h - margin.top - margin.bottom;
+			// set up chart
+			var color = d3.scaleOrdinal(d3.schemeCategory10);
+			color.domain(dat.map(function (d) { return d.key; }));
+
+			var svg = d3.select("#chart_"+'!{doc._id}'+"")
+			.append("svg").attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom).append("g")
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+			function getDate(d) {
+				return new Date(d);
+			}
+			var minDate = d3.min(dots, function(c) { return getDate(c.date); });
+			var maxDate = d3.max(dots, function(c) { return getDate(c.date); });
+			var minVal = d3.min(dots, function(c) { return c.val; });
+			var maxVal = d3.max(dots, function(c) { return c.val; });
+
+			$('#start_date').datepicker({
+				startDate: minDate,
+				endDate: maxDate,
+				keyboardNavigation: false,
+				autoclose: true,
+				defaultViewDate: minDate
+			})
+			$('#end_date').datepicker({
+				keyboardNavigation: false,
+				autoclose: true,
+				startDate: minDate,
+				endDate: maxDate,
+				defaultViewDate: maxDate
+			})
+			$('#new_date').datepicker({
+				keyboardNavigation: false,
+				autoclose: true,
+				startDate: minDate,
+				endDate: maxDate
+			})
+			
+			// xscale
+			var x = d3.scaleTime().range([0, width]);
+			var y = d3.scaleLinear().range([height, 0]);
+
+			var line = d3.line()
+			.x(function (d, i) {
+				return x(getDate(d.date));
+			})
+			.y(function (d) {
+				console.log(d.val)
+				console.log(y(d.val))
+				return y(d.val);
+			});
+			x.domain(d3.extent(dots, function(d){
+				return getDate(d.date)
+			}))
+			y.domain(d3.extent(dots, function(d){
+				return d.val;
+			}));
+
+			svg.append("g").attr("class", "x axis")
+			.attr("transform", "translate(0," + height + ")").call(d3.axisBottom(x));
+			svg.append("g").attr("class", "y axis")
+			.call(d3.axisLeft(y));
+				
+			var mKeys = Object.keys(dat);
+			var measurement = 
+				svg.selectAll(".measurement")
+				.data(dat)
+				.enter().append("g")
+				.attr("class", "measurement");
+			
+			var path = measurement.append("path")
+				.attr("class", "line")
+				.attr("d", function (d, i) {
+					return line(d.data);
+				}).style("stroke", function (d, i) {
+					return color(d.key);
+				});;
+				
+			var thispath = path._groups[0];
+			console.log(path._groups)
+			for (var i = 0; i < thispath.length; i++) {
+				var totalLength = thispath[i].getTotalLength();
+				d3.select(thispath[i])
+				.attr("stroke-dasharray", totalLength + " " + totalLength )
+				.attr("stroke-dashoffset", totalLength)
+				.transition().duration(2000)
+				.attr("stroke-dashoffset", 0)
+			}
+
+			var label = measurement.append("text")
+				.attr("x", 3)
+				.attr("y", function(d){
+					console.log(d.data[0].val)
+					return y(d.data[0].val)
+				}).attr("dy", ".35em").text(function (d, i) {
+					return d.key.toUpperCase();
+				});
+
+
+			var dot = 
+			svg.selectAll(".dot")
+			.data(dots)
+			.enter().append("svg:circle")
+			.attr("class", "dot")
+			.attr("cx", function(d) {
+				return x(getDate(d.date)) 
+			})
+			.attr("cy", function(d) { 
+				//console.log(d.val)
+				return y(d.val) 
+			})
+			.attr("r", 6)
+			.attr("fill", function(d){
+				return color(d.name)
+			})
+			.on("mouseover", function(d){
+				var getThisDate = getDate(d.date);
+				var displayDate = ''+getThisDate.getMonth()+'/'+getThisDate.getDate()+'/'+getThisDate.getFullYear()+'';
+				var displayVal = d.val.toFixed(1);
+				$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='date col-xs-6'>"+d.name.toUpperCase()+"</div><div class='col-xs-12'><h4 class='quote'><strong>"+displayVal+"</strong></h4></div></div>");
+				$('.tt').show();
+				d3.select(this).style("opacity", 1);
+			}).on("mousemove", function(d){
+				var xPosition = d3.mouse(this)[0] + margin.left;
+				var yPosition = d3.mouse(this)[1] + margin.top;
+				if (yPosition > height-(margin.bottom)) {
+					yPosition = yPosition - (margin.bottom)
+					$(".tt").css("top", (yPosition + parseFloat($('.tt').css('height').split('px')[0])+"px"))
+				} else {
+					$(".tt").css({"top": (yPosition)+"px"})
+				}
+				if (xPosition > (width - parseFloat($('.tt').css('width').split('px')[0]) )) {
+					xPosition = (xPosition - parseFloat($('.tt').css('width').split('px')[0]));
+					$(".tt").css({"left": xPosition+"px"});
+				} else {
+					$(".tt").css({"left": xPosition+"px"});
+				}
+			}).on("mouseout", function(d){
+				d3.select(this).style("opacity", 0);
+				$(".tt").hide();
+			});
+		}

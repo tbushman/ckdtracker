@@ -1,4 +1,5 @@
 var express = require('express');
+var passport = require('passport');
 var Measure = require('../models/measures');
 var Patient = require('../models/patients');
 var multer  = require('multer');
@@ -13,6 +14,27 @@ var upload = multer();
 
 dotenv.load();
 
+//for all /api/*
+function ensureAuthenticated(req, res, next) {
+	if (req.isAuthenticated()) { 
+		return next(); 
+	}
+	return res.redirect('/login');
+}
+
+function ensureContent(req, res, next) {
+	//if (req.session.content) {
+	var username = req.params.namekey
+		req.measure = require('../models/content.js')({collection: username});
+		req.session.measure = username;
+	//} else {
+		//Publisher.findOne
+	//}
+	return next()
+}
+
+router.all(/^(?!\/register$)(?!\/login$)(?!\/logout$).+/, ensureContent);
+
 router.get('/', function(req, res, next) {
 	req.session.data = null;
 	if (req.session.data) {
@@ -21,65 +43,164 @@ router.get('/', function(req, res, next) {
 			dots: req.session.dots
 		})
 	} else {
-		Patient.find({}, function(err, data){
+		
+	}
+})
+
+router.get('/login', function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	// console.log(outputPath)
+	return res.render('login', { 
+		user: req.user
+	});
+});
+
+router.post('/login', upload.array(), passport.authenticate('local'), function(req, res, next) {
+	var outputPath = url.parse(req.url).pathname;
+	// console.log(outputPath)
+	req.session.username = req.user.username;
+	console.log('authenticated '+req.user.username)
+	console.log(req.isAuthenticated())
+	res.redirect('/')
+});
+
+router.get('/logout', function(req, res) {
+	var outputPath = url.parse(req.url).pathname;
+	req.logout();
+	if (req.user || req.session) {
+		req.user = null;
+		req.session.destroy(function(err){
+			if (err) {
+				req.session = null;
+				//improve error handling
+				return res.redirect('/');
+			} else {
+				req.session = null;
+				return res.redirect('/');
+			}
+		});		
+	} else {
+		return res.redirect('/');
+	}
+});
+
+router.get('/register', function(req, res) {
+	return res.render('register', { } );
+});
+
+
+router.post('/register', upload.array(), function(req, res, next) {
+	Patient.register(new Patient({ name : req.body.name, username: req.body.username }), req.body.password, function(err, user) {
+		if (err) {
+			console.log(err)
+			return res.render('register', {info: "Sorry. That username already exists. Try again."});
+		}
+
+		passport.authenticate('local')(req, res, function () {
+			Patient.findOne({key: req.body.key}, function(error, doc){
+				if (error) {
+					console.log(outputPath)
+					return next(error)
+				}
+				req.session.username = req.body.username;
+				if (req.body.username === 'sophia_bushman'){
+					return res.redirect('/api/init')
+				} else {
+					return res.redirect('/api/add/'+req.body.username+'/0')
+				}
+			})
+		});
+	});
+});
+
+router.get('/view/:username', function(req, res, next){
+	
+	Patient.find({patient: req.params.username}, function(err, results){
+		if (err) {
+			return next(err)
+		}
+		if (data.length === 0) {
+			return res.redirect('/register');
+		}
+		req.measure.aggregate([
+			{ $match: { patient: req.params.username } },
+			{
+				$project: {
+					measurements: {
+						$filter: {
+							input: '$measurements',
+							as: 'measurements',
+							cond: { $ne: ['$$measurements.vis', false] }
+						}
+					}
+				}
+			}
+		]).exec(function(err, results) {
 			if (err) {
 				return next(err)
 			}
-			if (data.length === 0) {
-				return res.redirect('/api/init');
+			var dots = [];
+			var result = results[0]
+			console.log(result)
+			if (result.measurements.length === 0) {
+				console.log(req.isAuthenticated())
+				return res.redirect('/api/add/'+req.session.username+'/0');
 			}
-			Patient.aggregate([
-				{
-					$project: {
-						measurements: {
-							$filter: {
-								input: '$measurements',
-								as: 'measurements',
-								cond: { $ne: ['$$measurements.vis', false] }
-							}
-						}
-					}
-				}
-			]).exec(function(err, results) {
+			//console.log(result.measurements[0].data)
+			Patient.findOne({key: result.measurements[0].patient}, function(err, doc){
 				if (err) {
 					return next(err)
 				}
-				var dots = [];
-				var result = results[0]
-				console.log(result.measurements[0].data)
-				Patient.findOne({key: result.measurements[0].patient}, function(err, doc){
-					if (err) {
-						return next(err)
-					}
-					//result = result.toObject();
-					for (var j in result.measurements) {
-						for (var i in result.measurements[j].data) {
-							var datObj = result.measurements[j].data[i];
-							if (Object.keys(datObj).length) {
-								dots.push(datObj)
-							}
+				var keys = [];
+				//result = result.toObject();
+				for (var j in result.measurements) {
+					for (var i in result.measurements[j].data) {
+						var datObj = result.measurements[j].data[i];
+						if (Object.keys(datObj).length) {
+							dots.push(datObj)
 						}
-					}	
-					result.key = doc.key;
-					return res.render('index', {
-						index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
-						data: result,
-						dots: dots,
-						keys: Object.keys(result.measurements)
-					});
-				})
-				
+					}
+					keys.push(result.measurements[j].key)
+				}	
+				result.key = doc.key;
+				return res.render('index', {
+					index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
+					data: data,
+					result: result.measurements,
+					dots: dots,
+					doc: doc,
+					keys: keys
+				});
 			})
+			
 		})
-	}
+	})
+})
+
+router.all('/api/*', ensureAuthenticated);
+
+router.get('/api/checkdate/:date', function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	Patient.findOne({key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}}, function(err, measures) {
+		if (err) {
+			return next(err)
+		}
+		if (!err && measures === null) {
+			return res.send(null)
+		}
+		console.log(measures) 
+		return res.send('ok');
+	})
 })
 
 router.post('/api/reveal/:namekey/:key', function(req, res, next){
 	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+	var outputPath = url.parse(req.url).pathname;
+	console.log(outputPath) 
 	var set = {$set:{}};
-	var key = 'measurements.$.'+ req.params.key +'.vis'
+	var key = 'measurements.$.vis'
 	set.$set[key] = true;
-	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{key: req.params.key}}, set, {new: true, safe: true}, function(err, result) {
+	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{$elemMatch:{key: req.params.key}}}, set, {new: true, safe: true, multi: false}, function(err, result) {
 		if (err) {
 			return next(err)
 		}
@@ -89,14 +210,41 @@ router.post('/api/reveal/:namekey/:key', function(req, res, next){
 
 router.post('/api/hide/:namekey/:key', function(req, res, next){
 	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+	var outputPath = url.parse(req.url).pathname;
+	console.log(outputPath); 
 	var set = {$set:{}};
-	var key = 'measurements.$.'+ req.params.key +'.vis'
+	var key = 'measurements.$.vis'
 	set.$set[key] = false;
-	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{key: req.params.key}}, set, {new: true, safe: true}, function(err, result) {
+	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{$elemMatch:{key: req.params.key}}}, set, {new: true, safe: true, multi: false}, function(err, result) {
 		if (err) {
 			return next(err)
 		}
-		return res.send('ok')
+		Patient.aggregate([
+			{
+				$project: {
+					measurements: {
+						$filter: {
+							input: '$measurements',
+							as: 'measurements',
+							cond: { $ne: ['$$measurements.vis', false] }
+						}
+					}
+				}
+			}
+		]).exec(function(err, results) {
+			if (err) {
+				return next(err)
+			}
+			if (results.measurements.length === 0) {
+				Patient.findOneAndUpdate({key: req.params.namekey, measurements:{$elemMatch:{key: 'creatinine'}}}, {$set: {'measurements.$.vis': true}}, {new: true, safe: true, multi: false}, function(err, result) {
+					if (err) {
+						return next(err)
+					}
+				})
+				return res.send('ok')
+			}
+			return res.send('ok')
+		})
 	}) 
 })
 function getIntervalFor(key, loc){
@@ -217,7 +365,7 @@ router.get('/api/init', function(req, res, next) {
 		
 		var patient = new Patient({
 			name: 'Sophia',
-			key: 'sophia_bushman',
+			username: 'sophia_bushman',
 			measurements: measurementdata
 		});
 		patient.save(function(err) {
@@ -229,75 +377,96 @@ router.get('/api/init', function(req, res, next) {
 	})
 })
 
-
-/*
-{
-    "identifier": "AAPL",
-    "item": "totalrevenue",
-    "result_count": 30,
-    "page_size": 50000,
-    "current_page": 1,
-    "total_pages": 1,
-    "api_call_credits": 1,
-    "data": [
-        {
-            "date": "2016-06-25",
-            "value": 220288000000.0
-        },
-        {
-            "date": "2016-03-26",
-            "value": 227535000000.0
-        },
-        ...
-    ]
-}*/
-
+router.get('/api/add/:namekey/:index', function(req, res, next){
+	Patient.findOne({key: req.params.namekey}, function(err, doc){
+		if (err) {
+			return next(err)
+		}
+		
+		if (!err && doc === null) {
+			return res.redirect('/')
+			
+		}
+		if (doc.measurements.length === 0) {
+			var measurements = {
+				albumin: 0,
+				totalProtein: 0,
+				globulin: 0,
+				bun: 0,
+				creatinine: 0,
+				cholesterol: 0,
+				glucose: 0,
+				calcium: 0,
+				phosphorus: 0,
+				tco2: 0,
+				chloride: 0,
+				potassium: 0,
+				sodium: 0,
+				alb_glob_ratio: 0,
+				bun_creatinine_ratio: 0,
+				na_k_ratio: 0,
+				anion_gap: 0,
+				sdma: 0,
+				wbc: 0,
+				rbc: 0,
+				hgb: 0,
+				hct: 0,
+				mcv: 0,
+				mch: 0,
+				mchc: 0,
+				per_reticulocyte: 0,
+				reticulocyte: 0,
+				per_neutrophil: 0,
+				neutrophil: 0,
+				per_lymphocyte: 0,
+				lymphocyte: 0,
+				per_monocyte: 0,
+				monocyte: 0,
+				per_eosinophil: 0,
+				eosinophil: 0,
+				per_basophil: 0,
+				basophil: 0,
+				platelet: 0
+			}
+			var keys = Object.keys(measurements);
+			
+			var measurementdata = [];
+			var lookup = ['sdma'];
+			keys.forEach(function(key){
+				measurementdata.push({
+					patient: 'sophia_bushman',
+					key: key,
+					data: [ 
+						{
+							name: key,
+							index: 0,
+							val: measurements[key],
+							date: moment().utc().format()
+						} 
+					],
+					high: getIntervalFor(key, 'us').interval[1],
+					low: getIntervalFor(key, 'us').interval[0],
+					unit: getIntervalFor(key, 'us').unit,
+					vis: lookup.indexOf(key) !== -1 ? true : false
+					
+				});
+			})
+			doc.measurements = JSON.parse(JSON.stringify(measurementdata))
+			doc.save(function(err){
+				if (err) {
+					return next(err)
+				}
+				
+			})
+		}
+	})
+})
 
 router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next){
 	var body = req.body;
 	//console.log(req)
 	var keys = Object.keys(body);
 	console.log(keys)
-	var measurements = {
-		albumin: 2.1,
-		totalProtein: 8.1,
-		globulin: 6.0,
-		bun: 72,
-		creatinine: 2.2,
-		cholesterol: 137,
-		glucose: 96,
-		calcium: 9.1,
-		phosphorus: 5.1,
-		tco2: 17,
-		chloride: 122,
-		potassium: 4.5,
-		sodium: 153,
-		alb_glob_ratio: 0.4,
-		bun_creatinine_ratio: 32.7,
-		na_k_ratio: 34,
-		anion_gap: 19,
-		sdma: 32,
-		wbc: 11.3,
-		rbc: 5.44,
-		hgb: 7.9,
-		hct: 26.0,
-		mcv: 48,
-		mch: 14.5,
-		mchc: 30.4,
-		per_reticulocyte: 0.1,
-		reticulocyte: 5,
-		per_neutrophil: 86,
-		neutrophil: 9718,
-		per_lymphocyte: 3,
-		lymphocyte: 339,
-		per_monocyte: 4,
-		monocyte: 452,
-		per_eosinophil: 7,
-		eosinophil: 791,
-		per_basophil: 0,
-		basophil: 0,
-		platelet: 439
-	}
 	//var keys = Object.keys(measurements);
 	Patient.findOne({key: req.params.namekey}, function(err, doc){
 		if (err) {
@@ -352,10 +521,6 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 						})
 						
 					})
-					
-					
-					
-					
 				} else {
 					Object.keys(body).forEach(function(key, i){
 						
@@ -370,15 +535,9 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 							return res.redirect('/')
 						})
 					})
-					
 				}
-				
-				
 			})
-			
-			
 		}
-		
 	})
 })
 
