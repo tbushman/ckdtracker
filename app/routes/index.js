@@ -46,20 +46,29 @@ router.get('/', function(req, res, next) {
 				}
 				var dots = [];
 				var result = results[0]
-				//result = result.toObject();
-				for (var j in result.measurements) {
-					for (var i in result.measurements[j].data) {
-						var datObj = result.measurements[j].data[i];
-						if (Object.keys(datObj).length) {
-							dots.push(datObj)
-						}
+				console.log(result.measurements[0].data)
+				Patient.findOne({key: result.measurements[0].patient}, function(err, doc){
+					if (err) {
+						return next(err)
 					}
-				}	
-				return res.render('index', {
-					data: result,
-					dots: dots,
-					keys: Object.keys(result.measurements)
-				});
+					//result = result.toObject();
+					for (var j in result.measurements) {
+						for (var i in result.measurements[j].data) {
+							var datObj = result.measurements[j].data[i];
+							if (Object.keys(datObj).length) {
+								dots.push(datObj)
+							}
+						}
+					}	
+					result.key = doc.key;
+					return res.render('index', {
+						index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
+						data: result,
+						dots: dots,
+						keys: Object.keys(result.measurements)
+					});
+				})
+				
 			})
 		})
 	}
@@ -244,10 +253,12 @@ router.get('/api/init', function(req, res, next) {
 }*/
 
 
-router.post('/api/add/:namekey', function(req, res, next){
+router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next){
 	var body = req.body;
+	//console.log(req)
 	var keys = Object.keys(body);
-	/*var measurements = {
+	console.log(keys)
+	var measurements = {
 		albumin: 2.1,
 		totalProtein: 8.1,
 		globulin: 6.0,
@@ -287,7 +298,7 @@ router.post('/api/add/:namekey', function(req, res, next){
 		basophil: 0,
 		platelet: 439
 	}
-	var keys = Object.keys(measurements);*/
+	//var keys = Object.keys(measurements);
 	Patient.findOne({key: req.params.namekey}, function(err, doc){
 		if (err) {
 			return next(err)
@@ -297,23 +308,35 @@ router.post('/api/add/:namekey', function(req, res, next){
 			return res.redirect('/')
 			
 		} else {
-			Patient.findOne({key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}}, {'measurements.$.data.date': {$gte:body.date}}, function(err, measures) {
+			var projection
+			Patient.findOne({key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}}, function(err, measures) {
 				if (err) {
 					return next(err)
 				}
 				var date = body.date
-				body.splice(Object.keys(body).indexOf('date'), 1);
+				keys.splice(keys.indexOf('date'), 1);
+				var dockeys = Object.keys(measurements);
 				if (!err && measures === null) {
 					// new
 					async.waterfall([
 						function(cb){
-							Object.keys(body).forEach(function(key, i){
-								doc.measuremets[key].data.push({
-									name: key,
-									index: doc.measuremets[key].data.length,
-									val: body[key],
-									date: date
-								})
+							doc = doc.toObject();
+							keys.forEach(function(key, i){
+								var ind = dockeys.indexOf(key)
+								
+								var meas = doc.measurements[dockeys.indexOf(key)];
+								
+								if (meas.key === key) {
+									console.log(meas.key, key, doc.measurements[ind])
+									var measurenew = {
+										name: key,
+										index: doc.measurements[ind].data.length,
+										val: body[key],
+										date: date
+									}
+									doc.measurements[ind].data.push(measurenew)
+								}
+								
 							})
 							cb(null, doc)
 						}
@@ -321,24 +344,24 @@ router.post('/api/add/:namekey', function(req, res, next){
 						if (err) {
 							console.log(err)
 						}
-						doc.save(function(err){
+						Patient.findOneAndUpdate({key: doc.key}, {$set:{measurements:JSON.parse(JSON.stringify(doc.measurements))}}, {safe: true, new: true, multi: false}, function(err, doc){
 							if (err) {
 								return next(err)
 							}
 							return res.redirect('/')
 						})
+						
 					})
 					
 					
 					
 					
 				} else {
-					var index = measurements.data[0].index;
 					Object.keys(body).forEach(function(key, i){
 						
 						var query = {key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}};
 						var set = {$set:{}}
-						var k = 'measurements.$.data.'+index+'.val'
+						var k = 'measurements.$.data.'+parseInt(req.params.index, 10)+'.val'
 						set.$set[k] = body[key]
 						Patient.findOneAndUpdate(query, set, {new: true, safe: true, multi: true}, function(err, doc){
 							if (err) {

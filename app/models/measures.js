@@ -6,6 +6,7 @@ var Measure = new Schema({
 	key: String,
 	data: [{
 		name: String,
+		index: Number,
 		val: Number,
 		date: Date
 	}],

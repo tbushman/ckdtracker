@@ -62,16 +62,27 @@ navbar.navbar-default.navbar-fixed-top
 								a.btn.btn-default#hidebtn(role="button", onclick="document.getElementById('modal').style.display = 'block'; document.getElementById('hidebtn').style.display = 'none';")
 									span Add Data
 
-			form.row.navbar-form.navbar-left#modal(style="display: none; height: 100px; overflow-y: scroll;",action="/api/add", method="POST", role="form")
+			form.row.navbar-form.navbar-left#modal(style="display: none; height: 100px; overflow-y: scroll;", action="/api/add/"+data.key+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
 				
-				div.col-xs-6.col-sm-3.new
-					h6 Date from:
-					div.form-group
-						div.input-group.date#new_date
-							input.form-control(type="text", name="date", data-provide="datepicker")
-							span.input-group-addon
-								span.i.fa.fa-calendar(aria-hidden="true")
-				div.col-xs-5
+				div.col-xs-12
+					div.row
+						div.col-xs-6.col-sm-3.new
+							h6 Date from:
+							div.form-group
+								div.input-group.date#new_date
+									input.form-control(type="text", name="date", data-provide="datepicker")
+									span.input-group-addon
+										span.i.fa.fa-calendar(aria-hidden="true")
+						
+						div.col-xs-6
+							div.row
+								div.col-xs-6
+									button.btn.btn-success.block(type="submit", title="Submit new")
+										span Submit data
+								div.col-xs-6
+									a.btn.btn-default.block(role="button", title="Cancel", href="/")
+										span Cancel
+				div.col-xs-6
 					each cat, i in keys
 						
 						if (i % 2 === 0)
@@ -82,7 +93,7 @@ navbar.navbar-default.navbar-fixed-top
 									div.input-group
 										input.block.form-control(type="number", step="0.1", name= data.measurements[cat].key)
 				
-				div.col-xs-5
+				div.col-xs-6
 					each cat, i in keys
 						if (i % 2 !== 0)
 							div.row
@@ -91,9 +102,7 @@ navbar.navbar-default.navbar-fixed-top
 								div.col-xs-9.form-group
 									div.input-group
 										input.block.form-control(type="number", step="0.1", name= data.measurements[cat].key)
-				div.col-xs-2
-					button.btn.btn-default.block(type="submit", title="Submit new")
-						span Submit data
+				
 
 script(type="text/javascript").
 	$(document).on('click', '.revealvalue', function(e){
