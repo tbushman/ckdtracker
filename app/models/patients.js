@@ -10,10 +10,7 @@ var Patient = new Schema({
 		type: String,
 		unique: true,
 		required: true,
-	},
-	measurements: [
-		Measure
-	]
+	}
 }, { collection: 'ckd' });
 
 Patient.plugin(passportLocalMongoose);

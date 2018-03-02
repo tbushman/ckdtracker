@@ -1,6 +1,5 @@
 var express = require('express');
 var passport = require('passport');
-var Measure = require('../models/measures');
 var Patient = require('../models/patients');
 var multer  = require('multer');
 var moment = require('moment');
@@ -24,8 +23,8 @@ function ensureAuthenticated(req, res, next) {
 
 function ensureContent(req, res, next) {
 	//if (req.session.content) {
-	var username = req.params.namekey
-		req.measure = require('../models/content.js')({collection: username});
+	var username = req.params.namekey;
+		req.measure = require('../models/measures.js')({collection: username});
 		req.session.measure = username;
 	//} else {
 		//Publisher.findOne
@@ -33,7 +32,24 @@ function ensureContent(req, res, next) {
 	return next()
 }
 
-router.all(/^(?!\/register$)(?!\/login$)(?!\/logout$).+/, ensureContent);
+function ensurePublisher(req, res, next) {
+	var username = req.params.namekey;
+	Patient.find({username: req.params.namekey}, function(err, data){
+		if (err) {
+			return next(err)
+		}
+		console.log(data)
+		if (!data || data.length === 0) {
+			return next('route')
+		} else {
+			return next();
+		}
+	})
+}
+
+router.param('namekey', ensureContent);
+
+//router.all(/^(?!\/$)(?!\/register$)(?!\/login$)(?!\/logout$).+/, ensureContent);
 
 router.get('/', function(req, res, next) {
 	req.session.data = null;
@@ -43,7 +59,7 @@ router.get('/', function(req, res, next) {
 			dots: req.session.dots
 		})
 	} else {
-		
+		return res.redirect('/view/sophia_bushman')
 	}
 })
 
@@ -113,79 +129,64 @@ router.post('/register', upload.array(), function(req, res, next) {
 	});
 });
 
-router.get('/view/:username', function(req, res, next){
+router.get('/view/:namekey', function(req, res, next){
 	
-	Patient.find({patient: req.params.username}, function(err, results){
+	req.measure.find({}, function(err, data){
 		if (err) {
 			return next(err)
 		}
 		if (data.length === 0) {
-			return res.redirect('/register');
-		}
-		req.measure.aggregate([
-			{ $match: { patient: req.params.username } },
-			{
-				$project: {
-					measurements: {
-						$filter: {
-							input: '$measurements',
-							as: 'measurements',
-							cond: { $ne: ['$$measurements.vis', false] }
-						}
-					}
-				}
+			if (req.params.namekey === 'sophia_bushman') {
+				res.redirect('/api/init/sophia_bushman')
+			} else {
+				return res.redirect('/');
 			}
-		]).exec(function(err, results) {
-			if (err) {
-				return next(err)
-			}
-			var dots = [];
-			var result = results[0]
-			console.log(result)
-			if (result.measurements.length === 0) {
-				console.log(req.isAuthenticated())
-				return res.redirect('/api/add/'+req.session.username+'/0');
-			}
-			//console.log(result.measurements[0].data)
-			Patient.findOne({key: result.measurements[0].patient}, function(err, doc){
+		} else {
+			req.measure.find({vis:{$ne:null}}, function(err, result){
 				if (err) {
 					return next(err)
 				}
-				var keys = [];
-				//result = result.toObject();
-				for (var j in result.measurements) {
-					for (var i in result.measurements[j].data) {
-						var datObj = result.measurements[j].data[i];
-						if (Object.keys(datObj).length) {
-							dots.push(datObj)
+				var dots = [];
+				console.log(result)
+				if (result.length === 0) {
+					console.log(req.isAuthenticated())
+					return res.redirect('/api/add/'+req.session.username+'/0');
+				} else {
+					var keys = [];
+					//result = result.toObject();
+					for (var j in result.measurements) {
+						for (var i in result.measurements[j].data) {
+							var datObj = result.measurements[j].data[i];
+							if (Object.keys(datObj).length) {
+								dots.push(datObj)
+							}
 						}
-					}
-					keys.push(result.measurements[j].key)
-				}	
-				result.key = doc.key;
-				return res.render('index', {
-					index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
-					data: data,
-					result: result.measurements,
-					dots: dots,
-					doc: doc,
-					keys: keys
-				});
-			})
-			
-		})
+						keys.push(result.measurements[j].key)
+					}	
+					//console.log(result.measurements[0].data)
+					return res.render('index', {
+						index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
+						data: data,
+						result: result,
+						dots: dots,
+						keys: keys
+					});
+				}
+				
+			})		}
+		
 	})
 })
 
 router.all('/api/*', ensureAuthenticated);
 
-router.get('/api/checkdate/:date', function(req, res, next){
+router.get('/api/checkdate/:namekey/:date', function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
-	Patient.findOne({key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}}, function(err, measures) {
+	req.measure.find({'data.date': body.date}, function(err, measures) {
 		if (err) {
 			return next(err)
 		}
-		if (!err && measures === null) {
+		if (!err && measures.length === 0) {
 			return res.send(null)
 		}
 		console.log(measures) 
@@ -198,9 +199,9 @@ router.post('/api/reveal/:namekey/:key', function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
 	console.log(outputPath) 
 	var set = {$set:{}};
-	var key = 'measurements.$.vis'
+	var key = 'vis'
 	set.$set[key] = true;
-	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{$elemMatch:{key: req.params.key}}}, set, {new: true, safe: true, multi: false}, function(err, result) {
+	req.measure.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
 		if (err) {
 			return next(err)
 		}
@@ -213,30 +214,18 @@ router.post('/api/hide/:namekey/:key', function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
 	console.log(outputPath); 
 	var set = {$set:{}};
-	var key = 'measurements.$.vis'
+	var key = 'vis'
 	set.$set[key] = false;
-	Patient.findOneAndUpdate({key: req.params.namekey, measurements:{$elemMatch:{key: req.params.key}}}, set, {new: true, safe: true, multi: false}, function(err, result) {
+	req.measure.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
 		if (err) {
 			return next(err)
 		}
-		Patient.aggregate([
-			{
-				$project: {
-					measurements: {
-						$filter: {
-							input: '$measurements',
-							as: 'measurements',
-							cond: { $ne: ['$$measurements.vis', false] }
-						}
-					}
-				}
-			}
-		]).exec(function(err, results) {
+		req.measure.find({vis:true},function(err, results) {
 			if (err) {
 				return next(err)
 			}
-			if (results.measurements.length === 0) {
-				Patient.findOneAndUpdate({key: req.params.namekey, measurements:{$elemMatch:{key: 'creatinine'}}}, {$set: {'measurements.$.vis': true}}, {new: true, safe: true, multi: false}, function(err, result) {
+			if (results.length === 0) {
+				req.measure.findOneAndUpdate({key: 'sdma'}, {$set: {vis: true}}, {new: true, safe: true, multi: false}, function(err, result) {
 					if (err) {
 						return next(err)
 					}
@@ -291,8 +280,8 @@ function getIntervalFor(key, loc){
 	return intervals[key][loc]
 }
 
-router.get('/api/init', function(req, res, next) {
-	Patient.find({}, function(err, data){
+router.get('/api/init/:namekey', function(req, res, next) {
+	req.measure.find({}, function(err, data){
 		if (err) {
 			return next(err)
 		}
@@ -344,7 +333,7 @@ router.get('/api/init', function(req, res, next) {
 		var measurementdata = [];
 		var lookup = ['bun', 'sdma', 'na_k_ratio'];
 		keys.forEach(function(key){
-			measurementdata.push({
+			var mea = new req.measure({
 				patient: 'sophia_bushman',
 				key: key,
 				data: [ 
@@ -361,33 +350,23 @@ router.get('/api/init', function(req, res, next) {
 				vis: lookup.indexOf(key) !== -1 ? true : false
 				
 			});
+			mea.save(function(err) {
+				if (err) {
+					return next(err)
+				}
+			})
 		})
-		
-		var patient = new Patient({
-			name: 'Sophia',
-			username: 'sophia_bushman',
-			measurements: measurementdata
-		});
-		patient.save(function(err) {
-			if (err) {
-				return next(err)
-			}
-			return res.redirect('/')
-		})
+		return res.redirect('/')
 	})
 })
 
 router.get('/api/add/:namekey/:index', function(req, res, next){
-	Patient.findOne({key: req.params.namekey}, function(err, doc){
+	req.measure.find({patient: req.params.namekey}, function(err, doc){
 		if (err) {
 			return next(err)
 		}
 		
-		if (!err && doc === null) {
-			return res.redirect('/')
-			
-		}
-		if (doc.measurements.length === 0) {
+		if (!err && doc.length === 0) {
 			var measurements = {
 				albumin: 0,
 				totalProtein: 0,
@@ -433,8 +412,8 @@ router.get('/api/add/:namekey/:index', function(req, res, next){
 			var measurementdata = [];
 			var lookup = ['sdma'];
 			keys.forEach(function(key){
-				measurementdata.push({
-					patient: 'sophia_bushman',
+				var mea = new req.measure({
+					patient: req.params.namekey,
 					key: key,
 					data: [ 
 						{
@@ -450,13 +429,11 @@ router.get('/api/add/:namekey/:index', function(req, res, next){
 					vis: lookup.indexOf(key) !== -1 ? true : false
 					
 				});
-			})
-			doc.measurements = JSON.parse(JSON.stringify(measurementdata))
-			doc.save(function(err){
-				if (err) {
-					return next(err)
-				}
-				
+				mea.save(function(err) {
+					if (err) {
+						return next(err)
+					}
+				})
 			})
 		}
 	})
@@ -468,67 +445,69 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 	var keys = Object.keys(body);
 	console.log(keys)
 	//var keys = Object.keys(measurements);
-	Patient.findOne({key: req.params.namekey}, function(err, doc){
+	req.measure.find({}, function(err, data){
 		if (err) {
 			return next(err)
 		}
 		
-		if (!err && doc === null) {
+		if (!err && doc.length === 0) {
 			return res.redirect('/')
 			
 		} else {
-			var projection
-			Patient.findOne({key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}}, function(err, measures) {
+			req.measure.find({'data.date': body.date}, function(err, measures) {
 				if (err) {
 					return next(err)
 				}
 				var date = body.date
 				keys.splice(keys.indexOf('date'), 1);
-				var dockeys = Object.keys(measurements);
-				if (!err && measures === null) {
+				if (!err && measures.length === 0) {
 					// new
 					async.waterfall([
 						function(cb){
-							doc = doc.toObject();
-							keys.forEach(function(key, i){
-								var ind = dockeys.indexOf(key)
-								
-								var meas = doc.measurements[dockeys.indexOf(key)];
-								
-								if (meas.key === key) {
-									console.log(meas.key, key, doc.measurements[ind])
-									var measurenew = {
-										name: key,
-										index: doc.measurements[ind].data.length,
-										val: body[key],
-										date: date
+							var counter = doc.data.length;
+							data.forEach(function(doc, i){
+								var mea = new req.measure({
+									patient: req.params.namekey,
+									key: key,
+									data: [ 
+										{
+											name: key,
+											index: counter,
+											val: body[key],
+											date: date
+										} 
+									],
+									high: getIntervalFor(key, 'us').interval[1],
+									low: getIntervalFor(key, 'us').interval[0],
+									unit: getIntervalFor(key, 'us').unit,
+									vis: lookup.indexOf(key) !== -1 ? true : false
+									
+								});
+								mea.save(function(err) {
+									if (err) {
+										console.log(err)
 									}
-									doc.measurements[ind].data.push(measurenew)
-								}
-								
+									counter++
+								})
 							})
-							cb(null, doc)
+							cb(null, key)
 						}
-					], function(err, doc){
+					], function(err, key){
 						if (err) {
 							console.log(err)
 						}
-						Patient.findOneAndUpdate({key: doc.key}, {$set:{measurements:JSON.parse(JSON.stringify(doc.measurements))}}, {safe: true, new: true, multi: false}, function(err, doc){
-							if (err) {
-								return next(err)
-							}
-							return res.redirect('/')
-						})
+						return res.redirect('/')
+						
 						
 					})
 				} else {
 					Object.keys(body).forEach(function(key, i){
 						
-						var query = {key: req.params.namekey, measurements: {$elemMatch: {'data.date': body.date}}};
+						var query = {key: key, data:{$elemMatch:{date: body.date}}};
 						var set = {$set:{}}
-						var k = 'measurements.$.data.'+parseInt(req.params.index, 10)+'.val'
+						var k = 'data.$.val'
 						set.$set[k] = body[key]
-						Patient.findOneAndUpdate(query, set, {new: true, safe: true, multi: true}, function(err, doc){
+						req.measure.findOneAndUpdate(query, set, {new: true, safe: true, multi: true}, function(err, doc){
 							if (err) {
 								return next(err)
 							}
