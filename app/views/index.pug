@@ -34,19 +34,10 @@ block content
 				});
 			}
 		})
-		/*$('.date').datepicker({
-			format: {
-				
-				toDisplay: function (date, format, language) {
-					var d = new Date(date);
-					return d.toISOString();
-				},
-				toValue: function (date, format, language) {
-					var d = new Date(date);
-					return d;
-				}
-			}
-		});*/
+		//var datepicker = $.fn.datepicker.noConflict(); // return $.fn.datepicker to previously assigned value
+		//$.fn.bootstrapDP = datepicker;
+		
+		
 		document.addEventListener('DOMContentLoaded', function() {
 			
 			var myWidth = 0, myHeight = 0;
@@ -100,26 +91,44 @@ block content
 			var maxDate = d3.max(dots, function(c) { return getDate(c.date); });
 			var minVal = d3.min(dots, function(c) { return c.val; });
 			var maxVal = d3.max(dots, function(c) { return c.val; });
-
-			$('#start_date').datepicker({
-				startDate: minDate,
-				endDate: maxDate,
-				keyboardNavigation: false,
-				autoclose: true,
-				defaultViewDate: minDate
-			})
-			$('#end_date').datepicker({
-				keyboardNavigation: false,
-				autoclose: true,
-				startDate: minDate,
-				endDate: maxDate,
-				defaultViewDate: maxDate
-			})
-			$('#new_date').datepicker({
-				keyboardNavigation: false,
-				autoclose: true,
-				startDate: minDate,
-				endDate: maxDate
+			
+			$(document).ready(function(){
+				$('.date').datepicker({
+					format: {
+						
+						toDisplay: function (date, format, language) {
+							var d = new Date(date);
+							return d.toISOString();
+						},
+						toValue: function (date, format, language) {
+							var d = new Date(date);
+							return d;
+						}
+					}
+				});
+				//$('#start_date > input').val(moment(minDate).utc().format());  
+				//$('#end_date > input').val(moment(maxDate).utc().format());
+				//$('#new_date > input').val();
+				$('#start_date').datepicker({
+					startDate: minDate,
+					endDate: maxDate,
+					keyboardNavigation: false,
+					autoclose: true,
+					defaultViewDate: minDate
+				})
+				$('#end_date').datepicker({
+					keyboardNavigation: false,
+					autoclose: true,
+					startDate: minDate,
+					endDate: maxDate,
+					defaultViewDate: maxDate
+				})
+				$('#new_date').datepicker({
+					keyboardNavigation: false,
+					autoclose: true/*,
+					startDate: moment(( !dat[0].data[#{index}] ? new Date() : dat[0].data[#{index}].date)).utc().format(),
+					endDate: moment(( !dat[0].data[#{index}] ? new Date() : dat[0].data[#{index}].date)).utc().format()
+				*/})
 			})
 			
 			// xscale
