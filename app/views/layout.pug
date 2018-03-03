@@ -33,31 +33,7 @@ html
 		script(type="text/javascript").
 			
 			
-			document.addEventListener('DOMContentLoaded', function() {
-				
-			  var myWidth = 0, myHeight = 0;
-				if( typeof( window.innerWidth ) == 'number' ) {
-				    //Non-IE
-					myWidth = window.innerWidth - 50;
-					myHeight = window.innerHeight - 50;
-				} else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
-					//IE 6+ in 'standards compliant mode'
-					myWidth = document.documentElement.clientWidth - 50;
-					myHeight = document.documentElement.clientHeight - 50;
-				} else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
-					//IE 4 compatible
-					myWidth = document.body.clientWidth - 50;
-					myHeight = document.body.clientHeight - 50;
-				} else {
-					myWidth = 800;
-					myHeight = 400;
-				}
-				if ('!{JSON.stringify(dots)}' !== '') {
-					graphIt('!{JSON.stringify(result)}', '!{JSON.stringify(dots)}', myWidth, myHeight);
-					
-				}
-				
-			});
+			
 			//$(document).ready()
 			/*$(document).on('click', '.remove', function(){
 				var thiskey = $(this).attr('id');

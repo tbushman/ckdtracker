@@ -1,6 +1,6 @@
 var express = require('express');
 var passport = require('passport');
-var Patient = require('../models/patients');
+var Publisher = require('../models/patients');
 var multer  = require('multer');
 var moment = require('moment');
 var _ = require('underscore');
@@ -65,11 +65,12 @@ function ensureAuthenticated(req, res, next) {
 		return res.redirect('/login');
 		
 	}
-	Patient.find({username: req.user.username}, function(err, data){
+	Publisher.find({username: req.user.username}, function(err, data){
 		if (err) {
 			return next(err)
 		}
-		console.log(data)
+		//console.log('auth')
+		//console.log(data)
 		if (!data || data.length === 0) {
 			return res.redirect('/login');
 		} else {
@@ -90,13 +91,13 @@ function ensureContent(req, res, next) {
 			if (err) {
 				return next(err)
 			}
-			console.log('ensurecontent data')
-			console.log(data)
+			//console.log('ensurecontent data')
+			//console.log(data)
 			
 
 			if (!data || data.length === 0) {
 				if (req.isAuthenticated()) {
-					return res.redirect('/api/init/'+username+'')
+					return res.redirect('/init/'+username)
 				} else {
 					return res.redirect('/register')
 				}
@@ -108,10 +109,10 @@ function ensureContent(req, res, next) {
 		})
 	} else {
 		if (req.isAuthenticated()) {
-			console.log(outputPath, req.user.username)
+			//console.log(outputPath, req.user.username)
 			req.measurements = require('../models/measures.js')({collection: req.user.username});
 			req.session.measure = req.user.username;
-			return res.redirect('/api/view/'+req.user.username+'')
+			return res.redirect('/api/'+req.user.username+'')
 		} else {
 			return res.redirect('/register')
 		}
@@ -120,11 +121,11 @@ function ensureContent(req, res, next) {
 
 function ensurePublisher(req, res, next) {
 	var username = req.params.namekey;
-	Patient.find({username: username}, function(err, data){
+	Publisher.find({username: username}, function(err, data){
 		if (err) {
 			return next(err)
 		}
-		console.log(data)
+		//console.log(data)
 		if (!data || data.length === 0) {
 			return next('route')
 		} else {
@@ -139,7 +140,7 @@ router.param('namekey', ensurePublisher);
 
 router.get('/', function(req, res, next) {
 	if (req.isAuthenticated()) {
-		return res.redirect('/api/view/'+req.user.username+'')
+		return res.redirect('/api/'+req.user.username+'')
 	} else {
 		//return res.redirect('/login');
 		return res.redirect('/register');
@@ -155,13 +156,13 @@ router.get('/login', function(req, res, next){
 	});
 });
 
-router.post('/login', upload.array(), passport.authenticate('local'), 
+router.post('/login', passport.authenticate('local'/*, { session: false }*/), 
 	function(req, res, next) {
 	// If this function gets called, authentication was successful.
 	// `req.user` contains the authenticated user.
-	req.session.save(function(){
-		return res.redirect('/api/view/'+req.user.username);
-	});
+	req.session.user = req.user;
+	req.measurements = require('../models/measures.js')({collection: req.user.username})
+	return res.redirect('/api/'+req.user.username);
 });
 
 router.get('/logout', function(req, res) {
@@ -189,103 +190,192 @@ router.get('/register', function(req, res) {
 });
 
 
-router.post('/register', upload.array(), function(req, res, next) {
-	Patient.register(new Patient({ name : req.body.name, username: req.body.username }), req.body.password, function(err, user) {
+router.post('/register', function(req, res, next) {
+	Publisher.register(new Publisher({ givenName: req.body.name, username: req.body.username }), req.body.password, function(err, user) {
 		if (err) {
 			console.log(err)
 			return res.render('register', {info: "Sorry. That username already exists. Try again."});
 		}
 
-		passport.authenticate('local')(req, res, function () {
-			Patient.findOne({username: req.body.username}, function(error, doc){
+		passport.authenticate('local'/*, { session: false }*/)(req, res, function () {
+			Publisher.findOne({username: req.body.username}, function(error, doc){
 				if (error) {
-					console.log(outputPath)
+					console.log(outputPath, error)
 					return next(error)
 				}
+				req.user = doc;
 				req.session.username = req.body.username;
-				return res.redirect('/api/init/'+req.body.username+'')
+				return res.redirect('/init/'+doc.username)
 			})
 		});
 	});
 });
 
-router.get('/view/:namekey', function(req, res, next){
-	var outputPath = url.parse(req.url).pathname;
-	if (!req.measurements) {
-		return res.redirect('/')
-	}
-	req.measurements.find({}, function(err, data){
-		if (err) {
-			return next(err)
-		}
-		console.log(data)
-		if (data.length === 0) {
-			return res.redirect('/api/init/'+req.params.namekey+'')
-		} else {
-			req.measurements.find({vis:{$ne:null}}, function(err, result){
-				if (err) {
-					return next(err)
-				}
-				var dots = [];
-				console.log(result)
-				var keys = [];
-				//result = result.toObject();
-				for (var j in result.measurements) {
-					for (var i in result.measurements[j].data) {
-						var datObj = result.measurements[j].data[i];
-						if (Object.keys(datObj).length) {
-							dots.push(datObj)
-						}
-					}
-					keys.push(result.measurements[j].key)
-				}	
-				//console.log(result.measurements[0].data)
-				return res.render('index', {
-					index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
-					data: data,
-					result: result,
-					dots: dots,
-					keys: keys
-				});
-				
-			})		
-		}
-		
-	})
-})
-
-router.all('/api/*', [ensureAuthenticated, ensureContent]);
-
-router.get('/api/view/:namekey', function(req, res, next){
+router.get('/init/:namekey', ensureAuthenticated/*, ensurePublisher, ensureContent*/, function(req, res, next) {
 	var outputPath = url.parse(req.url).pathname;
 	console.log(outputPath)
-	req.measurements.find({}, function(err, data){
+	async.waterfall([
+		function(next){
+			var username = req.user.username;
+			req.measurements = require('../models/measures.js')({collection: username});
+			req.measurements.find({}, function(err, data){
+				if (err) {
+					return next(err)
+				}
+				var measurements = {
+					albumin: 2.1,
+					totalProtein: 8.1,
+					globulin: 6.0,
+					bun: 72,
+					creatinine: 2.2,
+					cholesterol: 137,
+					glucose: 96,
+					calcium: 9.1,
+					phosphorus: 5.1,
+					tco2: 17,
+					chloride: 122,
+					potassium: 4.5,
+					sodium: 153,
+					alb_glob_ratio: 0.4,
+					bun_creatinine_ratio: 32.7,
+					na_k_ratio: 34,
+					anion_gap: 19,
+					sdma: 32,
+					wbc: 11.3,
+					rbc: 5.44,
+					hgb: 7.9,
+					hct: 26.0,
+					mcv: 48,
+					mch: 14.5,
+					mchc: 30.4,
+					per_reticulocyte: 0.1,
+					reticulocyte: 5,
+					per_neutrophil: 86,
+					neutrophil: 9718,
+					per_lymphocyte: 3,
+					lymphocyte: 339,
+					per_monocyte: 4,
+					monocyte: 452,
+					per_eosinophil: 7,
+					eosinophil: 791,
+					per_basophil: 0,
+					basophil: 0,
+					platelet: 439
+				}
+				/*var measurements = {
+					albumin: 0,
+					totalProtein: 0,
+					globulin: 0,
+					bun: 0,
+					creatinine: 0,
+					cholesterol: 0,
+					glucose: 0,
+					calcium: 0,
+					phosphorus: 0,
+					tco2: 0,
+					chloride: 0,
+					potassium: 0,
+					sodium: 0,
+					alb_glob_ratio: 0,
+					bun_creatinine_ratio: 0,
+					na_k_ratio: 0,
+					anion_gap: 0,
+					sdma: 0,
+					wbc: 0,
+					rbc: 0,
+					hgb: 0,
+					hct: 0,
+					mcv: 0,
+					mch: 0,
+					mchc: 0,
+					per_reticulocyte: 0,
+					reticulocyte: 0,
+					per_neutrophil: 0,
+					neutrophil: 0,
+					per_lymphocyte: 0,
+					lymphocyte: 0,
+					per_monocyte: 0,
+					monocyte: 0,
+					per_eosinophil: 0,
+					eosinophil: 0,
+					per_basophil: 0,
+					basophil: 0,
+					platelet: 0
+				}*/
+				var keys = Object.keys(measurements);
+				
+				var measurementdata = [];
+				var lookup = ['bun', 'sdma', 'na_k_ratio'];
+
+				//req.measurements = require('../models/measures.js')({collection: username});
+				keys.forEach(function(key){
+					var mea = new req.measurements({
+						patient: req.user.username,
+						key: key,
+						data: [ 
+							{
+								name: key,
+								index: 0,
+								val: measurements[key],
+								date: moment().utc().format()
+							} 
+						],
+						high: getIntervalFor(key, 'us').interval[1],
+						low: getIntervalFor(key, 'us').interval[0],
+						unit: getIntervalFor(key, 'us').unit,
+						vis: lookup.indexOf(key) !== -1 ? true : false
+						
+					});
+					mea.save(function(err) {
+						if (err) {
+							return next(err)
+						}
+					})
+				})
+				next(null)
+			})
+		}
+	], function(err){
+		if (err) {
+			return next(err)
+		}
+		return res.redirect('/')
+	})
+	
+})
+
+
+router.get('/view/:namekey', ensureContent, function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	var username = req.params.namekey;
+	require('../models/measures.js')({collection: username}).find({}, function(err, data){
 		if (err) {
 			return next(err)
 		}
 		if (data.length === 0) {
-			return res.redirect('/api/init/'+req.params.namekey+'')
+			return res.redirect('/init/'+username)
 		} else {
-			req.measurements.find({vis:{$ne:null}}, function(err, result){
+			require('../models/measures.js')({collection: username}).find({vis:true}).lean().exec(function(err, result){
 				if (err) {
 					return next(err)
 				}
 				var dots = [];
-				console.log(result)
 				var keys = [];
 				//result = result.toObject();
-				for (var j in result.measurements) {
-					for (var i in result.measurements[j].data) {
-						var datObj = result.measurements[j].data[i];
-						if (Object.keys(datObj).length) {
+				
+				for (var j in result) {
+					for (var i in result[j].data) {
+						var datObj = result[j].data[i];
+						if (isNaN(Object.keys(datObj))) {
+							console.log(result[j].data[i]);
 							dots.push(datObj)
 						}
 					}
-					keys.push(result.measurements[j].key)
+					keys.push(result[j].key)
 				}	
-				//console.log(result.measurements[0].data)
+				//console.log(result[0].data)
 				return res.render('index', {
-					index: result.measurements[0].data[result.measurements[0].data.length - 1].index,
+					index: result[0].data[result[0].data.length - 1].index,
 					data: data,
 					result: result,
 					dots: dots,
@@ -298,28 +388,74 @@ router.get('/api/view/:namekey', function(req, res, next){
 	})
 })
 
-router.get('/api/checkdate/:namekey/:date', function(req, res, next){
+router.all('/api/*', require('connect-ensure-login').ensureLoggedIn());
+
+router.get('/api/:namekey', ensureContent, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
-	req.measurements.find({'data.date': body.date}, function(err, measures) {
+	console.log(outputPath)
+	var username = req.params.namekey;
+
+	require('../models/measures.js')({collection: username}).find({}, function(err, data){
+		if (err) {
+			return next(err)
+		}
+		if (data.length === 0) {
+			return res.redirect('/init/'+username)
+		} else {
+			require('../models/measures.js')({collection: username}).find({vis:true}).lean().exec(function(err, result){
+				if (err) {
+					return next(err)
+				}
+				var dots = [];
+				//console.log(result)
+				var keys = [];
+				//result = result.toObject();
+				for (var j in result) {
+					for (var i in result[j].data) {
+						var datObj = result[j].data[i];
+						if (Object.keys(datObj).length) {
+							dots.push(datObj)
+						}
+					}
+					keys.push(result[j].key)
+				}	
+				//console.log(result[0].data)
+				return res.render('index', {
+					index: result[0].data[result[0].data.length - 1].index,
+					data: data,
+					result: result,
+					dots: dots,
+					keys: keys
+				});
+				
+			})		
+		}
+		
+	})
+})
+
+router.get('/api/checkdate/:namekey/:date', ensureContent, function(req, res, next){
+	var outputPath = url.parse(req.url).pathname;
+	require('../models/measures.js')({collection: username}).find({'data.date': body.date}).lean().exec(function(err, measures) {
 		if (err) {
 			return next(err)
 		}
 		if (!err && measures.length === 0) {
 			return res.send(null)
 		}
-		console.log(measures) 
+		//console.log(measures) 
 		return res.send('ok');
 	})
 })
 
-router.post('/api/reveal/:namekey/:key', function(req, res, next){
-	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+router.post('/api/reveal/:namekey/:key', ensureContent, function(req, res, next){
+	//Publisher.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
 	var outputPath = url.parse(req.url).pathname;
 	console.log(outputPath) 
 	var set = {$set:{}};
 	var key = 'vis'
 	set.$set[key] = true;
-	req.measurements.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
+	require('../models/measures.js')({collection: username}).findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
 		if (err) {
 			return next(err)
 		}
@@ -327,23 +463,23 @@ router.post('/api/reveal/:namekey/:key', function(req, res, next){
 	}) 
 })
 
-router.post('/api/hide/:namekey/:key', function(req, res, next){
-	//Patient.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
+router.post('/api/hide/:namekey/:key', ensureContent, function(req, res, next){
+	//Publisher.findOne({key: req.params.namekey}, {measurements: {$elemMatch:{key: {$in: req.params.keys}}}}, function(err, doc){
 	var outputPath = url.parse(req.url).pathname;
 	console.log(outputPath); 
 	var set = {$set:{}};
 	var key = 'vis'
 	set.$set[key] = false;
-	req.measurements.findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
+	require('../models/measures.js')({collection: username}).findOneAndUpdate({key: req.params.key}, set, {new: true, safe: true, multi: false}, function(err, result) {
 		if (err) {
 			return next(err)
 		}
-		req.measurements.find({vis:true},function(err, results) {
+		require('../models/measures.js')({collection: username}).find({vis:true}).lean().exec(function(err, results) {
 			if (err) {
 				return next(err)
 			}
 			if (results.length === 0) {
-				req.measurements.findOneAndUpdate({key: 'sdma'}, {$set: {vis: true}}, {new: true, safe: true, multi: false}, function(err, result) {
+				require('../models/measures.js')({collection: username}).findOneAndUpdate({key: 'sdma'}, {$set: {vis: true}}, {new: true, safe: true, multi: false}, function(err, result) {
 					if (err) {
 						return next(err)
 					}
@@ -355,126 +491,11 @@ router.post('/api/hide/:namekey/:key', function(req, res, next){
 	}) 
 })
 
-router.get('/api/init/:namekey', function(req, res, next) {
-	var outputPath = url.parse(req.url).pathname;
-	console.log(outputPath)
-	req.measurements.find({}, function(err, data){
-		if (err) {
-			return next(err)
-		}
-		var measurements = {
-			albumin: 2.1,
-			totalProtein: 8.1,
-			globulin: 6.0,
-			bun: 72,
-			creatinine: 2.2,
-			cholesterol: 137,
-			glucose: 96,
-			calcium: 9.1,
-			phosphorus: 5.1,
-			tco2: 17,
-			chloride: 122,
-			potassium: 4.5,
-			sodium: 153,
-			alb_glob_ratio: 0.4,
-			bun_creatinine_ratio: 32.7,
-			na_k_ratio: 34,
-			anion_gap: 19,
-			sdma: 32,
-			wbc: 11.3,
-			rbc: 5.44,
-			hgb: 7.9,
-			hct: 26.0,
-			mcv: 48,
-			mch: 14.5,
-			mchc: 30.4,
-			per_reticulocyte: 0.1,
-			reticulocyte: 5,
-			per_neutrophil: 86,
-			neutrophil: 9718,
-			per_lymphocyte: 3,
-			lymphocyte: 339,
-			per_monocyte: 4,
-			monocyte: 452,
-			per_eosinophil: 7,
-			eosinophil: 791,
-			per_basophil: 0,
-			basophil: 0,
-			platelet: 439
-		}
-		/*var measurements = {
-			albumin: 0,
-			totalProtein: 0,
-			globulin: 0,
-			bun: 0,
-			creatinine: 0,
-			cholesterol: 0,
-			glucose: 0,
-			calcium: 0,
-			phosphorus: 0,
-			tco2: 0,
-			chloride: 0,
-			potassium: 0,
-			sodium: 0,
-			alb_glob_ratio: 0,
-			bun_creatinine_ratio: 0,
-			na_k_ratio: 0,
-			anion_gap: 0,
-			sdma: 0,
-			wbc: 0,
-			rbc: 0,
-			hgb: 0,
-			hct: 0,
-			mcv: 0,
-			mch: 0,
-			mchc: 0,
-			per_reticulocyte: 0,
-			reticulocyte: 0,
-			per_neutrophil: 0,
-			neutrophil: 0,
-			per_lymphocyte: 0,
-			lymphocyte: 0,
-			per_monocyte: 0,
-			monocyte: 0,
-			per_eosinophil: 0,
-			eosinophil: 0,
-			per_basophil: 0,
-			basophil: 0,
-			platelet: 0
-		}*/
-		var keys = Object.keys(measurements);
-		
-		var measurementdata = [];
-		var lookup = ['bun', 'sdma', 'na_k_ratio'];
-		keys.forEach(function(key){
-			var mea = new req.measurements({
-				patient: req.user.username,
-				key: key,
-				data: [ 
-					{
-						name: key,
-						index: 0,
-						val: measurements[key],
-						date: moment().utc().format()
-					} 
-				],
-				high: getIntervalFor(key, 'us').interval[1],
-				low: getIntervalFor(key, 'us').interval[0],
-				unit: getIntervalFor(key, 'us').unit,
-				vis: lookup.indexOf(key) !== -1 ? true : false
-				
-			});
-			mea.save(function(err) {
-				if (err) {
-					return next(err)
-				}
-			})
-		})
-		return res.redirect('/')
-	})
-})
 
-router.get('/api/add/:namekey/:index', function(req, res, next){
+router.get('/api/add/:namekey/:index', ensureContent, function(req, res, next){
+	var username = req.params.namekey;
+
+	req.measurements = require('../models/measures.js')({collection: username});
 	req.measurements.find({patient: req.params.namekey}, function(err, data){
 		if (err) {
 			return next(err)
@@ -525,6 +546,8 @@ router.get('/api/add/:namekey/:index', function(req, res, next){
 			
 			var measurementdata = [];
 			var lookup = ['sdma'];
+			req.measurements = require('../models/measures.js')({collection: username});
+
 			keys.forEach(function(key){
 				var mea = new req.measurements({
 					patient: req.params.namekey,
@@ -577,12 +600,16 @@ router.get('/api/add/:namekey/:index', function(req, res, next){
 	})
 })
 
-router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next){
+router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(req, res, next){
 	var body = req.body;
 	//console.log(req)
 	var keys = Object.keys(body);
 	console.log(keys)
 	//var keys = Object.keys(measurements);
+	var username = req.params.namekey;
+
+	req.measurements = require('../models/measures.js')({collection: username});
+
 	req.measurements.find({}, function(err, data){
 		if (err) {
 			return next(err)
@@ -603,6 +630,10 @@ router.post('/api/add/:namekey/:index', upload.array(), function(req, res, next)
 					async.waterfall([
 						function(cb){
 							var counter = doc.data.length;
+							var username = req.params.namekey;
+
+							req.measurements = require('../models/measures.js')({collection: username});
+
 							data.forEach(function(doc, i){
 								var mea = new req.measurements({
 									patient: req.params.namekey,

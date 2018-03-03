@@ -1,10 +1,9 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
-		Measure = require('./measures.js'),
 		passportLocalMongoose = require('passport-local-mongoose');
 
-var Patient = new Schema({
-	name: String,
+var Publisher = new Schema({
+	givenName: String,
 	password: String,
 	username: {
 		type: String,
@@ -13,5 +12,5 @@ var Patient = new Schema({
 	}
 }, { collection: 'ckd' });
 
-Patient.plugin(passportLocalMongoose);
-module.exports = mongoose.model('Patient', Patient);
+Publisher.plugin(passportLocalMongoose, {usernameField: 'username'});
+module.exports = mongoose.model('Publisher', Publisher);

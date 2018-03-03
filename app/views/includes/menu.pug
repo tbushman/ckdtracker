@@ -41,7 +41,7 @@ navbar.navbar-default.navbar-fixed-top
 								div.panel-body
 									ul.list-group(aria-labelledby="dropdownMenu1", style="max-height: 300px; overflow: hidden; overflow-y: scroll;")
 										
-										each cat, i in doc.measurements
+										each cat, i in data
 											if (cat.vis)
 												li.list-group-item
 													div.input-group
@@ -75,7 +75,7 @@ navbar.navbar-default.navbar-fixed-top
 										span Add Data
 
 				div.col-xs-10
-					form.row.navbar-form.navbar-left#modal_new(style="display: none; max-height: 300px; overflow-y: scroll;", action="/api/add/"+doc.key+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
+					form.row.navbar-form.navbar-left#modal_new(style="display: none; max-height: 300px; overflow-y: scroll;", action="/api/add/"+result[0].patient+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
 						div.row
 						
 							div.col-xs-12
@@ -91,7 +91,7 @@ navbar.navbar-default.navbar-fixed-top
 									
 							
 									div.col-xs-6.col-sm-4
-										each mea, j in doc.measurements
+										each mea, j in data
 										
 											if (j % 2 === 0)
 											
@@ -102,7 +102,7 @@ navbar.navbar-default.navbar-fixed-top
 														div.input-group
 															input.btn-block.form-control(type="number", step="0.1", name= mea.key)
 									div.col-xs-6.col-sm-4
-										each mea, j in doc.measurements
+										each mea, j in data
 											if (j % 2 !== 0)
 												
 													
@@ -125,7 +125,7 @@ navbar.navbar-default.navbar-fixed-top
 													span Submit data
 
 
-					form.row.navbar-form.navbar-left#modal_edit(style="display: none; height: 100px; overflow-y: scroll;", action="/api/add/"+doc.key+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
+					form.row.navbar-form.navbar-left#modal_edit(style="display: none; height: 100px; overflow-y: scroll;", action="/api/add/"+result[0].patient+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
 						
 						div.col-xs-12
 							div.row
@@ -140,7 +140,7 @@ navbar.navbar-default.navbar-fixed-top
 
 													
 								div.col-xs-6.col-sm-4
-									each mea, j in doc.measurements
+									each mea, j in data
 									
 										if (keys.indexOf(mea.key) !== -1)
 										
@@ -151,7 +151,7 @@ navbar.navbar-default.navbar-fixed-top
 													div.input-group
 														input.btn-block.form-control(type="number", step="0.1", name= mea.key, value= mea.data[index].val)
 								div.col-xs-6.col-sm-4
-									each mea, j in doc.measurements
+									each mea, j in data
 										if (keys.indexOf(mea.key) === -1)
 											
 												
