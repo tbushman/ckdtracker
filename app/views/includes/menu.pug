@@ -42,18 +42,11 @@ navbar.navbar-default.navbar-fixed-top
 									ul.list-group(aria-labelledby="dropdownMenu1", style="max-height: 300px; overflow: hidden; overflow-y: scroll;")
 										
 										each cat, i in data
-											if (cat.vis)
-												li.list-group-item
-													div.input-group
-														input.revealvalue(type="checkbox", aria-label= cat.key, id="reveal_"+cat.key+"", checked="true")
-														span &nbsp
-														label(for="reveal_"+cat.key) #{cat.key}
-											else
-												li.list-group-item
-													div.input-group
-														input.revealvalue(type="checkbox", aria-label= cat.key, id="reveal_"+cat.key+"")
-														span &nbsp
-														label(for="reveal_"+cat.key) #{cat.key}
+											li.list-group-item
+												div.input-group
+													input.revealvalue(type="checkbox", aria-label= cat.key, id="reveal_"+cat.key+"", checked=(cat.vis ? "true":null))
+													span &nbsp
+													label(for="reveal_"+cat.key) #{cat.key}
 											
 					div.col-xs-12.col-sm-3
 						h6.col-xs-12 Add Data:

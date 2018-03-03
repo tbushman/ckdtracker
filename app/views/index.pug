@@ -73,7 +73,7 @@ block content
 			
 		});
 		function graphIt(dat, dots, w, h){
-			console.log(dots)
+			console.log(dat)
 			//dat = JSON.parse(dat);
 			//dots = JSON.parse(dots);
 			//console.log(dat)
@@ -130,23 +130,30 @@ block content
 			//.datum(function(d){return d.data[i]})
 			.x(function (d, i) {
 				//console.log(d)
-				return x(getDate(d));
+				return x(getDate(d.date));
 			})
 			.y(function (d, i) {
 				//console.log(d)
-				return y(d);
+				return y(d.val);
 			});
-			x.domain(d3.extent(dots, function(d, i){
-				return getDate(d.date)
+			x.domain(
+				[minDate, maxDate]
+				/*d3.extent(dots, function(d, i){
+				return getDate(d.date)*/
 				//return getDate(d.data[i].date)
-			}))
-			y.domain(d3.extent(dots, function(d, i){
+				//})
+			)
+			y.domain(
+				[minVal, maxVal]
+				/*d3.extent(dots, function(d, i){
 				return d.val;
 				//return d.data[i].val;
-			}));
+				})*/
+			);
 
 			svg.append("g").attr("class", "x axis")
-			.attr("transform", "translate(0," + height + ")").call(d3.axisBottom(x));
+			.attr("transform", "translate(0," + height + ")")
+			.call(d3.axisBottom(x));
 			svg.append("g").attr("class", "y axis")
 			.call(d3.axisLeft(y));
 				
@@ -193,7 +200,7 @@ block content
 			.enter().append("svg:circle")
 			.attr("class", "dot")
 			.attr("cx", function(d, i) {
-				console.log(d)
+				//console.log(d)
 				return x(d.date)
 				//.data.map(function(v){ return x(getDate(v.date)) });
 			})
