@@ -24,6 +24,9 @@ a {
 	color: #00B7FF;
 }
 
+option {
+	color: #000;
+}
 .hider {
 	display: none;
 }
@@ -49,6 +52,7 @@ form {
 }
 .panel {
 	margin-top: 10px;
+	margin-bottom: 0!important;
 }
 
 .panel-title:hover {
@@ -66,7 +70,6 @@ form {
 .subtitle {
 	color: #999;
 	font-size: 9px;
-	line-height: 0;
 }
 .overlay {
   fill: none;
@@ -116,7 +119,7 @@ form {
 }
  
 .dot:hover {
-	stroke: rgba(68, 127, 255, 0.3);
+	stroke: rgba(0, 0, 0, 0.07);
 }
 .focus circle {
   fill: none;

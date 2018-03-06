@@ -13,8 +13,8 @@ mongod.exe
 node
 node.exe
 node.lib
-ckd
-ckd/db*
+ckddb
+ckddb/db*
 .npm
 
 # Logs

@@ -6,19 +6,10 @@ block content
 		div.tt.panel.panel-sm(style="position: absolute;")
 			
 	
-	div.row
-		each val, index in data
-			div.col-xs-12.col-sm-6.col-md-4
-				div.panel.panel-default
-					div.panel-body.row
-						h5.col-xs-10.col-sm-9.col-lg-10 
-						div.col-xs-2.col-sm-3.col-lg-2
-							button.btn.pull-right(role="button", type="submit", class="remove") 
-								i.fa.fa-times(aria-hidden="true")
 	script(type="text/javascript").
 		$(document).on('click', '.submit', function(){
 			var id = $(this).attr('id');
-			$('#modal_'+id.split('submit')[1]+'').submit();
+			$('#modal_'+id.split('submit')[1]+'').children('form')[0].submit();
 		})
 		$(document).on('change', '.revealvalue', function(){
 			//e.preventDefault()
@@ -34,8 +25,6 @@ block content
 				});
 			}
 		})
-		//var datepicker = $.fn.datepicker.noConflict(); // return $.fn.datepicker to previously assigned value
-		//$.fn.bootstrapDP = datepicker;
 		
 		
 		document.addEventListener('DOMContentLoaded', function() {
@@ -58,16 +47,28 @@ block content
 				myHeight = 400;
 			}
 			if ('!{JSON.stringify(dots)}' !== '') {
+				$('select').on('change', function(e){
+					console.log(e.target.children)
+					if ('!{result}' !== '') {
+						$(e.target).children('option').each(function(i, opt){
+							console.log(opt.selected)
+							if (opt.selected) {
+								
+								window.location.href = '/api/'+'!{result[0].patient}'+'/'+i+'/true';
+								//$.post('/api/'+result[0].patient+'/'+i+'')
+							}
+						})
+					}
+				});
+				if (!{edit}) {
+					$($('#hideedit').click())
+				}
 				graphIt(!{JSON.stringify(result)}, !{JSON.stringify(dots)}, myWidth, myHeight);
 				
 			}
 			
 		});
 		function graphIt(dat, dots, w, h){
-			console.log(dat)
-			//dat = JSON.parse(dat);
-			//dots = JSON.parse(dots);
-			//console.log(dat)
 			// set up size
 			var margin = { top: 20, right: 20, bottom: 140, left: 40};
 			var width = w - margin.left - margin.right;
@@ -92,72 +93,48 @@ block content
 			var minVal = d3.min(dots, function(c) { return c.val; });
 			var maxVal = d3.max(dots, function(c) { return c.val; });
 			
-			$(document).ready(function(){
-				$('.date').datepicker({
-					format: {
-						
-						toDisplay: function (date, format, language) {
-							var d = new Date(date);
-							return d.toISOString();
-						},
-						toValue: function (date, format, language) {
-							var d = new Date(date);
-							return d;
-						}
-					}
-				});
-				//$('#start_date > input').val(moment(minDate).utc().format());  
-				//$('#end_date > input').val(moment(maxDate).utc().format());
-				//$('#new_date > input').val();
-				$('#start_date').datepicker({
-					startDate: minDate,
-					endDate: maxDate,
-					keyboardNavigation: false,
-					autoclose: true,
-					defaultViewDate: minDate
-				})
-				$('#end_date').datepicker({
-					keyboardNavigation: false,
-					autoclose: true,
-					startDate: minDate,
-					endDate: maxDate,
-					defaultViewDate: maxDate
-				})
-				$('#new_date').datepicker({
-					keyboardNavigation: false,
-					autoclose: true/*,
-					startDate: moment(( !dat[0].data[#{index}] ? new Date() : dat[0].data[#{index}].date)).utc().format(),
-					endDate: moment(( !dat[0].data[#{index}] ? new Date() : dat[0].data[#{index}].date)).utc().format()
-				*/})
+			$('#start_date').datepicker({
+				startDate: new Date(minDate),
+				endDate: new Date(maxDate),
+				keyboardNavigation: false,
+				autoclose: true,
+				defaultViewDate: new Date(minDate)
 			})
+			$('#end_date').datepicker({
+				keyboardNavigation: false,
+				autoclose: true,
+				startDate: new Date(minDate),
+				endDate: new Date(maxDate),
+				defaultViewDate: new Date(maxDate)
+			});
+			$('.daterange').on('change', function(e){
+				var begin = $('#start_date').val();
+				var end = $('#end_date').val();
+				window.location.href = '/daterange/'+'!{result[0].patient}'+'/'+begin+'/'+end+''
+			})
+			$('#new_date').datepicker({
+				keyboardNavigation: false,
+				autoclose: true,
+				endDate: new Date()
+			});
+
 			
 			// xscale
 			var x = d3.scaleTime().range([0, width]);
 			var y = d3.scaleLinear().range([height, 0]);
 
 			var line = d3.line()
-			//.datum(function(d){return d.data[i]})
 			.x(function (d, i) {
-				//console.log(d)
 				return x(getDate(d.date));
 			})
 			.y(function (d, i) {
-				//console.log(d)
 				return y(d.val);
 			});
 			x.domain(
 				[minDate, maxDate]
-				/*d3.extent(dots, function(d, i){
-				return getDate(d.date)*/
-				//return getDate(d.data[i].date)
-				//})
 			)
 			y.domain(
 				[minVal, maxVal]
-				/*d3.extent(dots, function(d, i){
-				return d.val;
-				//return d.data[i].val;
-				})*/
 			);
 
 			svg.append("g").attr("class", "x axis")
@@ -171,12 +148,11 @@ block content
 				svg.selectAll(".measurement")
 				.data(dat)
 				.enter().append("g")
-				.attr("class", function(d){/*console.log(d);*/return "measurement"});
+				.attr("class", function(d){return "measurement_"+d.key});
 			
 			var path = measurement.append("path")
 				.attr("class", "line")
 				.attr("d", function (d, i) {
-					//console.log(d)
 					return line(d.data);
 				}).style("stroke", function (d, i) {
 					return color(d.key);
@@ -196,9 +172,10 @@ block content
 			var label = measurement.append("text")
 				.attr("x", 3)
 				.attr("y", function(d, i){
-					//console.log(d.data)
-					return d.data.map(function(v){ return y(v.val) });
-				}).attr("dy", ".35em").text(function (d, i) {
+					return y(d.data[0].val)
+				})
+				.attr("dy", ".35em")
+				.text(function (d, i) {
 					return d.key.toUpperCase();
 				});
 
@@ -209,27 +186,23 @@ block content
 			.enter().append("svg:circle")
 			.attr("class", "dot")
 			.attr("cx", function(d, i) {
-				//console.log(d)
-				return x(d.date)
-				//.data.map(function(v){ return x(getDate(v.date)) });
+				return x(getDate(d.date))
 			})
 			.attr("cy", function(d, i) { 
-				//console.log(d.data[i])
 				return y(d.val)
-				//.data.map(function(v){ return y(v.val) });
-				//return y(d) 
 			})
 			.attr("r", 6)
 			.attr("fill", function(d){
-				return color(d.key)
+				return color(d.name)
 			})
 			.on("mouseover", function(d, i){
 				var getThisDate = getDate(d.date);
 				var displayDate = ''+getThisDate.getMonth()+'/'+getThisDate.getDate()+'/'+getThisDate.getFullYear()+'';
 				var displayVal = d.val.toFixed(1);
-				$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='date col-xs-6'>"+d.name.toUpperCase()+"</div><div class='col-xs-12'><h4 class='quote'><strong>"+displayVal+"</strong></h4></div></div>");
+				$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='date col-xs-6' style='text-align: right;'>"+d.name.toUpperCase()+"</div><div class='col-xs-12'><h4 class='quote' style='color: "+color(d.name)+"!important; text-align: right;'><strong>"+displayVal+"</strong></h4></div></div>");
 				$('.tt').show();
 				d3.select(this).style("opacity", 1);
+				
 			}).on("mousemove", function(d){
 				var xPosition = d3.mouse(this)[0] + margin.left;
 				var yPosition = d3.mouse(this)[1] + margin.top;
