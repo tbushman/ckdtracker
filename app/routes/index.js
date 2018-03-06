@@ -84,8 +84,9 @@ function ensureContent(req, res, next) {
 	console.log('ensurecontent path')
 
 	if (req.session.measure) {
-		var username = req.session.measure
-		//req.params.namekey ? req.params.namekey : req.user.username;
+		var username = req.params.namekey ? req.params.namekey : req.session.measure;
+		//req.session.measure
+		//
 		console.log(outputPath, username)
 		require('../models/measures.js')({collection: username}).find({}, function(err, data){
 			if (err) {
@@ -114,7 +115,12 @@ function ensureContent(req, res, next) {
 			req.session.measure = req.user.username;
 			return res.redirect('/api/'+req.user.username+'')
 		} else {
-			return res.redirect('/register')
+			if (req.params.namekey) {
+				req.session.measure = req.params.namekey;
+				return res.redirect('/view/'+req.params.namekey)
+			} else {
+				return res.redirect('/logout')
+			}
 		}
 	}
 }
@@ -143,7 +149,7 @@ router.get('/', function(req, res, next) {
 		return res.redirect('/api/'+req.user.username+'')
 	} else {
 		//return res.redirect('/login');
-		return res.redirect('/register');
+		return res.redirect('/login');
 	}
 
 })
@@ -222,47 +228,8 @@ router.get('/init/:namekey', ensureAuthenticated/*, ensurePublisher, ensureConte
 				if (err) {
 					return next(err)
 				}
+				
 				var measurements = {
-					albumin: 2.1,
-					totalProtein: 8.1,
-					globulin: 6.0,
-					bun: 72,
-					creatinine: 2.2,
-					cholesterol: 137,
-					glucose: 96,
-					calcium: 9.1,
-					phosphorus: 5.1,
-					tco2: 17,
-					chloride: 122,
-					potassium: 4.5,
-					sodium: 153,
-					alb_glob_ratio: 0.4,
-					bun_creatinine_ratio: 32.7,
-					na_k_ratio: 34,
-					anion_gap: 19,
-					sdma: 32,
-					wbc: 11.3,
-					rbc: 5.44,
-					hgb: 7.9,
-					hct: 26.0,
-					mcv: 48,
-					mch: 14.5,
-					mchc: 30.4,
-					per_reticulocyte: 0.1,
-					reticulocyte: 5,
-					per_neutrophil: 86,
-					neutrophil: 9718,
-					per_lymphocyte: 3,
-					lymphocyte: 339,
-					per_monocyte: 4,
-					monocyte: 452,
-					per_eosinophil: 7,
-					eosinophil: 791,
-					per_basophil: 0,
-					basophil: 0,
-					platelet: 439
-				}
-				/*var measurements = {
 					albumin: 0,
 					totalProtein: 0,
 					globulin: 0,
@@ -301,7 +268,7 @@ router.get('/init/:namekey', ensureAuthenticated/*, ensurePublisher, ensureConte
 					per_basophil: 0,
 					basophil: 0,
 					platelet: 0
-				}*/
+				}
 				var keys = Object.keys(measurements);
 				
 				var measurementdata = [];
@@ -379,7 +346,8 @@ router.get('/view/:namekey', ensureContent, function(req, res, next){
 					data: data,
 					result: result,
 					dots: dots,
-					keys: keys
+					keys: keys,
+					ce: false
 				});
 				
 			})		
@@ -425,7 +393,8 @@ router.get('/api/:namekey', ensureContent, function(req, res, next){
 					data: data,
 					result: result,
 					dots: dots,
-					keys: keys
+					keys: keys,
+					ce: true
 				});
 				
 			})		
@@ -608,7 +577,7 @@ router.post('/api/hide/:namekey/:key', ensureContent, function(req, res, next){
 		}
 	})
 })*/
-
+/*
 router.get('/api/add/:namekey/:index', ensureContent, function(req, res, next){
 	var username = req.params.namekey;
 
@@ -691,14 +660,20 @@ router.get('/api/add/:namekey/:index', ensureContent, function(req, res, next){
 			})
 			return res.redirect('/')
 		} else {
-			var keys = [];
+			
+			var keys = Object.keys.;
 			for (var i in data) {
 				var dat = {
 					name: key,
 					index: parseInt(req.params.index, 10),
 					val: measurements[key],
 					date: moment().utc().format()
-				} 
+				}
+				require('../models/measures.js')({collection: username}).update({'data.date': data[0].data.date}, {$set: {'data.$.val': measurements[key]}}).exec(function(err, doc){
+					if (err) {
+						console.log(err)
+					}
+				})
 				data[i].data.push(dat);
 				data[i].save(function(err){
 					if (err) {
@@ -709,13 +684,13 @@ router.get('/api/add/:namekey/:index', ensureContent, function(req, res, next){
 					if (err) {
 						console.log(err)
 					}
-				})*/
+				})
 				
 			}
 			return res.redirect('/')
 		}
 	})
-})
+})*/
 
 router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(req, res, next){
 	var body = req.body;
@@ -746,19 +721,19 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 					// new
 					async.waterfall([
 						function(cb){
-							var counter = data[0].data.length;
+							//var counter = data[0].data.length;
 							var username = req.params.namekey;
 
 							req.measurements = require('../models/measures.js')({collection: username});
-
+							var index = parseInt(req.params.index, 10);
 							keys.forEach(function(key, i){
-								var mea = new req.measurements({
+								/*var mea = new req.measurements({
 									patient: req.params.namekey,
 									key: key,
 									data: [ 
 										{
 											name: key,
-											index: counter,
+											index: index,
 											val: body[key],
 											date: date
 										} 
@@ -773,7 +748,18 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 									if (err) {
 										console.log(err)
 									}
-									counter++
+									//counter++
+								})*/
+								var mea = {
+									name: key,
+									index: index,
+									val: body[key],
+									date: date
+								};
+								req.measurements.findOneAndUpdate({key: key}, {$push:{data:mea}}, {safe: true, multi: false}, function(err, doc){
+									if (err) {
+										console.log(err)
+									}
 								})
 							})
 							cb(null)
@@ -795,7 +781,7 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 						set.$set[k] = body[key]
 						req.measurements.findOneAndUpdate(query, set, {new: true, safe: true, upsert: false}, function(err, doc){
 							if (err) {
-								return next(err)
+								console.log(err)
 							}
 							
 						})
