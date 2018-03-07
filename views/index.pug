@@ -126,7 +126,8 @@ block content
 				} else {
 					return b.date - a.date;
 				}
-			})
+			});
+
 			$('#start_date').datepicker({
 				startDate: new Date(absMinDate),
 				endDate: new Date(absMaxDate),
@@ -144,7 +145,7 @@ block content
 						var d = new Date(date);
 						return new Date(d);
 					}
-			}
+				}
 			})
 			$('#end_date').datepicker({
 				keyboardNavigation: false,
@@ -167,7 +168,18 @@ block content
 			$('#new_date').datepicker({
 				keyboardNavigation: false,
 				autoclose: true,
-				endDate: new Date()
+				endDate: new Date(),
+				format: {
+				
+					toDisplay: function (date, format, language) {
+						var d = new Date(date);
+						return d.toISOString();
+					},
+					toValue: function (date, format, language) {
+						var d = new Date(date);
+						return new Date(d);
+					}
+				}
 			});
 
 			
@@ -182,6 +194,20 @@ block content
 			.y(function (d, i) {
 				return y(d.val);
 			});
+			var rangeLineHigh = d3.line()
+			.x(function(d){
+				return x(getDate(d.date))
+			})
+			.y(function(d){
+				return y(d.high)
+			})
+			var rangeLineLow = d3.line()
+			.x(function(d){
+				return x(getDate(d.date))
+			})
+			.y(function(d){
+				return y(d.low)
+			})
 			x.domain(
 				[minDate, maxDate]
 			)
@@ -208,9 +234,38 @@ block content
 					return line(d.data);
 				}).style("stroke", function (d, i) {
 					return color(d.key);
-				});;
+				})
+				.on("mouseover", function(d, i){
+					var rangeline = $(this).siblings('.rangeline')
+					$(rangeline).attr("opacity", 1);
+					$(this).siblings('.rangelabel').attr("opacity", 1);
+				})
+				.on("mouseout", function(d){
+					var rangeline = $(this).siblings('.rangeline')
+					$(rangeline).attr("opacity", 0);
+					$(this).siblings('.rangelabel').attr("opacity", 0);
+				});
+			
+			var rangepathHigh = measurement.append("path")
+				.attr("class", "rangeline")
+				.attr("d", function(d){
+					return rangeLineHigh(d.data)
+				})
+				.attr("stroke", "#999999")
+				.attr("stroke-width", "1")
+				.attr("stroke-dasharray", "4,3")
+				.attr("opacity", 0);
+			
+			var rangepathLow = measurement.append("path")
+				.attr("class", "rangeline")
+				.attr("d", function(d){
+					return rangeLineLow(d.data)
+				})
+				.attr("stroke", "#999999")
+				.attr("stroke-width", "1")
+				.attr("stroke-dasharray", "4,3")
+				.attr("opacity", 0);
 				
-				console.log(path._groups)
 			var thispath = path._groups[0];
 			for (var i = 0; i < thispath.length; i++) {
 				var totalLength = thispath[i].getTotalLength();
@@ -230,7 +285,32 @@ block content
 				.text(function (d, i) {
 					return d.key.toUpperCase();
 				});
-
+			
+			var rangeLabelHigh = measurement.append("text")
+				.attr("class", "rangelabel")
+				.attr("x", width - margin.right - 10)
+				.attr("y", function(d, i){
+					return y(d.data[0].high)
+				})
+				.attr("dy", "-5px")
+				.attr("opacity", 0)
+				.text(function (d, i) {
+					return d.data[0].high +""+ d.data[0].unit;
+				})
+				.attr("style", "font-size: 10px;");
+			
+			var rangeLabelLow = measurement.append("text")
+				.attr("class", "rangelabel")
+				.attr("x", width - margin.right - 10)
+				.attr("y", function(d, i){
+					return y(d.data[0].low)
+				})
+				.attr("dy", "10px")
+				.attr("opacity", 0)
+				.text(function (d, i) {
+					return d.data[0].low +""+ d.data[0].unit;
+				})
+				.attr("style", "font-size: 10px;");
 
 			var dot = 
 			svg.selectAll(".dot")

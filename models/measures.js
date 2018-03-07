@@ -8,11 +8,11 @@ var Measure = new Schema({
 		name: String,
 		index: Number,
 		val: Number,
-		date: Date
+		date: Date,
+    high: Number,
+  	low: Number,
+  	unit: String
 	}],
-	high: Number,
-	low: Number,
-	unit: String,
 	vis: Boolean
 }, {pluralize: false});
 

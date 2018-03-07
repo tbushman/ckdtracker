@@ -268,12 +268,12 @@ router.get('/init/:namekey', ensureAuthenticated, function(req, res, next) {
 								name: key,
 								index: 0,
 								val: measurements[key],
-								date: moment().utc().format()
+								date: moment().utc().format(),
+								high: getIntervalFor(key, 'us').interval[1],
+								low: getIntervalFor(key, 'us').interval[0],
+								unit: getIntervalFor(key, 'us').unit,
 							} 
 						],
-						high: getIntervalFor(key, 'us').interval[1],
-						low: getIntervalFor(key, 'us').interval[0],
-						unit: getIntervalFor(key, 'us').unit,
 						vis: lookup.indexOf(key) !== -1 ? true : false
 						
 					});
@@ -514,7 +514,7 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 				if (err) {
 					return next(err)
 				}
-				console.log(measures)
+				//console.log(measures)
 				var date = body.date
 				keys.splice(keys.indexOf('date'), 1);
 				if (!err && measures.length === 0) {
@@ -529,7 +529,11 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 									name: key,
 									index: index,
 									val: body[key],
-									date: date
+									date: new Date(date),
+									high: getIntervalFor(key, 'us').interval[1],
+									low: getIntervalFor(key, 'us').interval[0],
+									unit: getIntervalFor(key, 'us').unit
+
 								};
 								req.measurements.findOneAndUpdate({key: key}, {$push:{data:mea}}, {safe: true, multi: false, upsert: false}, function(err, doc){
 									if (err) {
@@ -549,14 +553,14 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 					})
 				} else {
 					// edit
-					Object.keys(body).forEach(function(key, i){
+					keys.forEach(function(key, i){
 						
 						var query = {key: key, data:{$elemMatch:{index: index}}};
 						var set = {$set:{}}
 						var k = 'data.$.val'
 						var d = 'data.$.date'
 						set.$set[k] = body[key]
-						set.$set[d] = date
+						set.$set[d] = new Date(date)
 						req.measurements.findOneAndUpdate(query, set, {new: true, safe: true, upsert: false}, function(err, doc){
 							if (err) {
 								console.log(err)
