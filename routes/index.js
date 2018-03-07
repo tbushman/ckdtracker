@@ -363,7 +363,7 @@ router.get('/daterange/:namekey/:begin/:end', function(req, res, next){
 		datearr.sort();
 		skip = indexes[0];
 		limit = indexes.length;
-		console.log(skip, limit)
+		//console.log(skip, limit)
 		require('../models/measures.js')({collection: namekey}).find({'data.date':{$gte: begin, $lte: end}}, { data: {$slice: [skip, limit] } }).lean().exec(function(err, result){
 			if (err) {
 				return next(err)
@@ -453,7 +453,7 @@ router.get('/api/checkdate/:namekey/:date', ensureContent, function(req, res, ne
 
 router.post('/api/reveal/:namekey/:key', ensureContent, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
-	console.log(outputPath) 
+	//console.log(outputPath) 
 	var set = {$set:{}};
 	var key = 'vis'
 	set.$set[key] = true;
@@ -467,7 +467,7 @@ router.post('/api/reveal/:namekey/:key', ensureContent, function(req, res, next)
 
 router.post('/api/hide/:namekey/:key', ensureContent, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
-	console.log(outputPath); 
+	//console.log(outputPath); 
 	var set = {$set:{}};
 	var key = 'vis'
 	set.$set[key] = false;
