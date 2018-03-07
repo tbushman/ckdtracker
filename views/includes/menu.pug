@@ -1,142 +1,173 @@
 navbar.navbar-default.navbar-fixed-top
-	div.navbar-header
-		button.navbar-toggle.collapsed(type="button", data-toggle="collapse", data-target="#navbar-collapse-1", aria-expanded="false")
-			span.sr-only Toggle navigation
-			span.icon-bar
-			span.icon-bar
-			span.icon-bar
-		if (result)
-			a.navbar-brand(href="#") #{result[0].patient}
-				h6.subtitle #{appTitle}
-		else
-			a.navbar-brand(href="#") #{appTitle}
 	if (result)
-		- var dates = result[0].data.map(function(c){return new Date(c.date)})
-		- dates.sort()
-		div.collapse.navbar-collapse.row#navbar-collapse-1
-			div.row.container-fluid
-				div.col-xs-12.col-sm-9.col-lg-10.col-xl-12
-					div.row.panel#control
-						div.col-xs-12.col-sm-6
-							h6 Date:
-							div.form-group
-								div.input-group.input-daterange.date#start_date
-									input.form-control.daterange(type="text", data-provide="datepicker", value= dates[0])
-									div.input-group-addon to
-									input.form-control.daterange(type="text", data-provide="datepicker", value= dates[dates.length-1])
-						
+		- var sortedDocByDate = result[0].data.sort(function(a,b){ if (new Date(a.date)<new Date(b.date)) { return a.date - b.date; } else { return b.date - a.date; } })
+		- var dateobjs = sortedDocByDate.map(function(c){return {date:new Date(c.date), ind:c.index}})
+		- var dates = sortedDocByDate.map(function(c){return new Date(c.date)})
+		- var indexes = sortedDocByDate.map(function(c){return c.index})
+		- console.log(dateobjs)
 
-
-						div.col-xs-12.col-sm-3
-							h6 Values:
-							div.dropdown
-								button.btn.btn-default.btn-block.dropdown-toggle(type="button", id="dropdownMenu1", data-toggle="dropdown", aria-haspopup="true", aria-expanded="true") Show / Hide 
-									span.caret
-								div.dropdown-menu.panel.panel-default
-									div.panel-body
-										ul.list-group(aria-labelledby="dropdownMenu1", style="max-height: 300px; overflow: hidden; overflow-y: scroll;")
-											
-											each cat, i in data
-												li.list-group-item
-													div.input-group
-														input.revealvalue(type="checkbox", aria-label= cat.key, id="reveal_"+cat.key+"", checked=(cat.vis ? "true":null))
-														span &nbsp
-														label(for="reveal_"+cat.key) #{cat.key}
-												
-						div.col-xs-12.col-sm-3(style="display: "+( ce ? "block;" : "none;")+"")
-							h6.row 
-								div.col-xs-12 Add Data:
-							
-							div.row
-								div.col-xs-6.form-group
-									div.col-xs-12.input-group
-										a.btn.btn-block.btn-default#hideedit(role="button", onclick="document.getElementById('modal_edit').style.display = 'block'; document.getElementById('modal_new').style.display = 'none'; document.getElementById('control').style.display = 'none';", aria-label="Add new Data")
-											span Edit Data
-									
-									
-								div.col-xs-6.form-group
-									div.col-xs-12.input-group
-										a.btn.btn-block.btn-default#hidenew(role="button", onclick="document.getElementById('modal_edit').style.display = 'none'; document.getElementById('modal_new').style.display = 'block'; document.getElementById('control').style.display = 'none';", aria-label="Edit existing Data")
-											span Add Data
-				div.col-xs-12.col-sm-9.col-lg-10.col-xl-12#modal_new(style="display: none; max-height: 300px; overflow-y: scroll;")
+	div.col-xs-12
+		div.row
+			div.col-xs-11.col-sm-2
+			
+				if (result)
+					a.navbar-brand.col-xs-12(href="#") #{result[0].patient}
+						h6.subtitle #{appTitle}
 					
-					form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
-						div.col-xs-12
-							div.row
-								div.col-xs-12.new.container-fluid
-									h6 Enter Date:
+					
+					
+				else
+					a.navbar-brand(href="#") #{appTitle}
+			div.col-xs-1
+				button.navbar-toggle.collapsed(type="button", data-toggle="collapse", data-target="#navbar-collapse-1", aria-expanded="false")
+					span.sr-only Toggle navigation
+					span.icon-bar
+					span.icon-bar
+					span.icon-bar
+
+			div.collapse.navbar-collapse#navbar-collapse-1(style="width: max-content;")
+				//div.row.container-fluid
+				if (!result)
+					ul.navbar-nav.mr-auto
+						li.nav-item
+							a.nav-link(href="/login") Login
+					ul.navbar-nav.mr-auto
+						li.nav-item
+							a.nav-link(href="/view/sophiabushman") Example
+				else
+
+					div.row.container-fluid
+						div.col-xs-12.col-sm-9.col-lg-10.col-xl-12
+							div.row.panel#control
+								div.col-xs-12.col-sm-6
+									h6 Date:
+									div.form-group
+										div.input-group.input-daterange.date#start_date
+											input.form-control.daterange.range0(type="text", data-provide="datepicker", value= dateobjs[0].date)
+											div.input-group-addon to
+											input.form-control.daterange.range1(type="text", data-provide="datepicker", value= dateobjs[dates.length-1].date)
+								
+
+
+								div.col-xs-12.col-sm-3
+									h6 Values:
+									div.dropdown
+										button.btn.btn-default.btn-block.dropdown-toggle(type="button", id="dropdownMenu1", data-toggle="dropdown", aria-haspopup="true", aria-expanded="true") Show / Hide 
+											span.caret
+										div.dropdown-menu.panel.panel-default
+											div.panel-body
+												ul.list-group(aria-labelledby="dropdownMenu1", style="max-height: 300px; overflow: hidden; overflow-y: scroll;")
+													
+													each cat, i in data
+														li.list-group-item
+															div.input-group
+																input.revealvalue(type="checkbox", aria-label= cat.key, id="reveal_"+cat.key+"", checked=(cat.vis ? "true":null))
+																span &nbsp
+																label(for="reveal_"+cat.key) #{cat.key}
+														
+								div.col-xs-12.col-sm-3(style="display: "+( ce ? "block;" : "none;")+"")
+									h6.row 
+										div.col-xs-12 Add Data:
+									
+									div.row
+										div.col-xs-6.form-group
+											div.col-xs-12.input-group
+												a.btn.btn-block.btn-default#hideedit(role="button", onclick="document.getElementById('modal_edit').style.display = 'block'; document.getElementById('modal_new').style.display = 'none'; document.getElementById('control').style.display = 'none';", aria-label="Add new Data")
+													span Edit Data
+											
+											
+										div.col-xs-6.form-group
+											div.col-xs-12.input-group
+												a.btn.btn-block.btn-default#hidenew(role="button", onclick="document.getElementById('modal_edit').style.display = 'none'; document.getElementById('modal_new').style.display = 'block'; document.getElementById('control').style.display = 'none';", aria-label="Edit existing Data")
+													span Add Data
+						div.col-xs-12.col-sm-9.col-lg-10.col-xl-12#modal_new(style="display: none; max-height: 300px; overflow-y: scroll;")
+							
+							form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
+								div.col-xs-12
+									div.row
+										div.col-xs-12.new.container-fluid
+											h6 Enter Date:
+											div.form-group.panel.panel-default
+												div.input-group.date#new_date
+													input.form-control.btn-block(type="text", name="date", data-provide="datepicker", value= new Date())
+													span.input-group-addon
+														span.i.fa.fa-calendar(aria-hidden="true")
+											p &nbsp
+											
+									
+										each mea, j in data
+											div.col-xs-12.col-sm-6.col-md-4.col-lg-3
+											
+											
+												div.row.container-fluid
+													div.col-xs-12.col-sm-8
+														label(for= mea.key) #{mea.key.toUpperCase()}
+													div.col-xs-12.col-sm-4.input-group
+														input.btn-block.form-control(type="number", step="0.1", name= mea.key, value="0")
+									div.row
+										div.col-xs-12
+											div.row
+												div.col-xs-12.col-sm-4
+													p &nbsp
+													a.btn.btn-default.btn-block(role="button", title="Cancel", href="/")
+														span Cancel
+												div.col-xs-12.col-sm-8
+													p &nbsp
+													a.btn.btn-success.btn-block.submit#submitnew(role="button", title="Submit new")
+														span Submit data
+
+						div.col-xs-12.col-sm-9.col-lg-10.col-xl-12#modal_edit(style="display: none; max-height: 300px; overflow-y: scroll;")
+							form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+index+"", method="POST", role="form", enctype="multipart/form-data")
+								//input(type="hidden", name="olddate", value=result[0].data[index].date)
+								
+								div.col-xs-6.container-fluid
+									- var month = (new Date(result[0].data[index].date).getMonth() + 1)
+									- var date = (new Date(result[0].data[index].date).getDate() )
+									h4 Editing data for 
+										span#msg-currentdate
+											span #{new Date(result[0].data[index].date).getFullYear()}
+											span  - 
+											span #{month}
+											span  - 
+											span #{date}
+											span
+												h6 
+													span #{result[0].data[index].date}
+										
+								div.col-xs-6.container-fluid#editdate
+									h6 Edit date
 									div.form-group.panel.panel-default
 										div.input-group.date#new_date
-											input.form-control.btn-block(type="text", name="date", data-provide="datepicker", value= new Date())
+											input.form-control.btn-block(type="text", name="date", data-provide="datepicker", value= result[0].data[index].date)
 											span.input-group-addon
 												span.i.fa.fa-calendar(aria-hidden="true")
 									p &nbsp
-									
-							
+								
+											
+
 								each mea, j in data
+									
 									div.col-xs-12.col-sm-6.col-md-4.col-lg-3
 									
 									
-										div.row.container-fluid
+										div.row.container-fluid.form-group
 											div.col-xs-12.col-sm-8
+										
 												label(for= mea.key) #{mea.key.toUpperCase()}
 											div.col-xs-12.col-sm-4.input-group
-												input.btn-block.form-control(type="number", step="0.1", name= mea.key, value="0")
-							div.row
-								div.col-xs-12
-									div.row
-										div.col-xs-12.col-sm-4
-											p &nbsp
-											a.btn.btn-default.btn-block(role="button", title="Cancel", href="/")
-												span Cancel
-										div.col-xs-12.col-sm-8
-											p &nbsp
-											a.btn.btn-success.btn-block.submit#submitnew(role="button", title="Submit new")
-												span Submit data
-
-				div.col-xs-12.col-sm-9.col-lg-10.col-xl-12#modal_edit(style="display: none; max-height: 300px; overflow-y: scroll;")
-					form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+index+"", method="POST", role="form", enctype="multipart/form-data")
-						div.container-fluid.col-xs-12
-							div.col-xs-12.new.form-group
-								label.btn-block(for="date") Date
-					
-								select.form-control(name="date", id="date")
+												input.btn-block.form-control(type="number", step="0.1", name= mea.key, value= mea.data[index].val)
 									
-									each yr, j in dates
-										if (j === index)
-											option(value=(new Date(yr)), selected= true)
-												span #{yr}
-
-										else
-											option(value=(new Date(yr)), selected= false)
-												span #{yr}
-									
-								p
-									
-
-							each mea, j in data
-								
-								div.col-xs-12.col-sm-6.col-md-4.col-lg-3
-								
-								
-									div.row.container-fluid.form-group
-										div.col-xs-12.col-sm-8
-									
-											label(for= mea.key) #{mea.key.toUpperCase()}
-										div.col-xs-12.col-sm-4.input-group
-											input.btn-block.form-control(type="number", step="0.1", name= mea.key, value= mea.data[index].val)
-								
-							div.row
-								div.col-xs-12
-									div.row
-										div.col-xs-12.col-sm-4
-											p &nbsp
-											a.btn.btn-default.btn-block(role="button", title="Cancel", href="/")
-												span Cancel
-										div.col-xs-12.col-sm-8
-											p &nbsp
-											a.btn.btn-success.btn-block.submit#submitedit(role="button", title="Submit edits")
-												span Submit data
-				
+								div.row
+									div.col-xs-12
+										div.row
+											div.col-xs-12.col-sm-4
+												p &nbsp
+												a.btn.btn-default.btn-block(role="button", title="Cancel", href="/")
+													span Cancel
+											div.col-xs-12.col-sm-8
+												p &nbsp
+												a.btn.btn-success.btn-block.submit#submitedit(role="button", title="Submit edits")
+													span Submit data
+						
 
 script(type="text/javascript").

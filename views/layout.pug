@@ -28,7 +28,27 @@ html
 		block footer
 			nav.navbar.navbar-default.navbar-fixed-bottom
 				.container-fluid
-					a.navbar-brand(href="https://github.com/tbushman/ckdtracker", target="_blank") repo
+					
+					a.navbar-brand.col-xs-8(href="https://github.com/tbushman/ckdtracker", target="_blank") repo
+					if (result)
+						div.new.form-group#choosedate.col-xs-4(style="margin-bottom: 0;")
+							if (edit && edit !== 'false')
+								label.btn-block(for="date") Edit a different entry
+							else
+								label.btn-block(for="date") View data by date
+							select.form-control.btn-block(name="date", id="date")
+								
+								each yr, j in dateobjs
+									if (yr.ind === index)
+										option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= true)
+											span #{yr.date}
+
+									else
+										option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= false)
+											span #{yr.date}
+								
+							p
+					
 
 		script(type="text/javascript", src="https://d3js.org/d3.v4.min.js" charset="utf-8")
 		script(type="text/javascript", src="/scripts/moment-with-locales.min.js")
