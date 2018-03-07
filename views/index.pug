@@ -26,6 +26,23 @@ block content
 			}
 		})
 		
+		$('#editdate input').on('change', function(er){
+			$('#msg-currentdate').html(
+				'<span>'+
+					new Date($(this).val()).getFullYear() +
+				'<span>'+
+				'<span> - </span>' + 
+				'<span>'+ 
+					(new Date($(this).val()).getMonth() + 1) +
+				'<span> - </span>' +
+				'<span>'+ 
+					(new Date($(this).val()).getDate()) +
+				'<span>'+
+					'<h6>'+ 
+						'<span>'+ 
+							new Date($(this).val())+
+						'</span></h6></span>')
+		});
 		
 		document.addEventListener('DOMContentLoaded', function() {
 			
@@ -52,23 +69,32 @@ block content
 					if ('!{result}' !== '') {
 						$(e.target).children('option').each(function(i, opt){
 							console.log(opt.selected)
+							var ind = parseInt(opt.getAttribute('id').split('selected_')[1], 10)
 							if (opt.selected) {
+								console.log(ind)
 								
-								window.location.href = '/api/'+'!{result[0].patient}'+'/'+i+'/true';
+								window.location.href = '/api/'+'!{result[0].patient}'+'/'+ind+'/true';
 								//$.post('/api/'+result[0].patient+'/'+i+'')
 							}
 						})
 					}
 				});
-				if (!{edit}) {
+				//console.log($('.navbar-toggle').css('display'))
+				if ('!{edit}' === 'true') {
+					console.log($('.navbar-toggle').css('display'))
+					if ($('.navbar-toggle').css('display') === 'block') {
+						console.log($('#navbar-toggle'))
+						$('#navbar-toggle').click();
+					}
 					$($('#hideedit').click())
+					
 				}
-				graphIt(!{JSON.stringify(result)}, !{JSON.stringify(dots)}, myWidth, myHeight);
+				graphIt(!{JSON.stringify(data)}, !{JSON.stringify(result)}, !{JSON.stringify(dots)}, myWidth, myHeight);
 				
 			}
 			
 		});
-		function graphIt(dat, dots, w, h){
+		function graphIt(datas, dat, dots, w, h){
 			// set up size
 			var margin = { top: 20, right: 20, bottom: 140, left: 40};
 			var width = w - margin.left - margin.right;
@@ -92,13 +118,33 @@ block content
 			var maxDate = d3.max(dots, function(c) { return getDate(c.date); });
 			var minVal = d3.min(dots, function(c) { return c.val; });
 			var maxVal = d3.max(dots, function(c) { return c.val; });
-			
+			var absMinDate = d3.min(datas[0].data, function(c){return getDate(c.date)})
+			var absMaxDate = d3.max(datas[0].data, function(c){return getDate(c.date)})
+			var sortedDataByDate = dat[0].data.sort(function(a,b){
+				if (new Date(a.date)<new Date(b.date)) {
+					return a.date - b.date;
+				} else {
+					return b.date - a.date;
+				}
+			})
 			$('#start_date').datepicker({
-				startDate: new Date(minDate),
-				endDate: new Date(maxDate),
-				keyboardNavigation: false,
+				startDate: new Date(absMinDate),
+				endDate: new Date(absMaxDate),
+				setDates: sortedDataByDate.map(function (v){getDate(v.date)}),
+				keepEmptyValues: false,
 				autoclose: true,
-				defaultViewDate: new Date(minDate)
+				//defaultViewDate: new Date(minDate),
+				format: {
+				
+					toDisplay: function (date, format, language) {
+						var d = new Date(date);
+						return d.toISOString();
+					},
+					toValue: function (date, format, language) {
+						var d = new Date(date);
+						return new Date(d);
+					}
+			}
 			})
 			$('#end_date').datepicker({
 				keyboardNavigation: false,
@@ -108,9 +154,15 @@ block content
 				defaultViewDate: new Date(maxDate)
 			});
 			$('.daterange').on('change', function(e){
-				var begin = $('#start_date').val();
-				var end = $('#end_date').val();
-				window.location.href = '/daterange/'+'!{result[0].patient}'+'/'+begin+'/'+end+''
+				var begin = //moment((
+					$('.range0').val()
+				//)).utc().format();
+				var end = //moment((
+					$('.range1').val()
+				//)).utc().format();
+				if (begin && end) {
+					window.location.href = '/daterange/'+'!{result[0].patient}'+'/'+begin+'/'+end+''
+				}
 			})
 			$('#new_date').datepicker({
 				keyboardNavigation: false,
@@ -197,7 +249,7 @@ block content
 			})
 			.on("mouseover", function(d, i){
 				var getThisDate = getDate(d.date);
-				var displayDate = ''+getThisDate.getMonth()+'/'+getThisDate.getDate()+'/'+getThisDate.getFullYear()+'';
+				var displayDate = ''+(getThisDate.getMonth()+1)+'/'+getThisDate.getDate()+'/'+getThisDate.getFullYear()+'';
 				var displayVal = d.val.toFixed(1);
 				$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='date col-xs-6' style='text-align: right;'>"+d.name.toUpperCase()+"</div><div class='col-xs-12'><h4 class='quote' style='color: "+color(d.name)+"!important; text-align: right;'><strong>"+displayVal+"</strong></h4></div></div>");
 				$('.tt').show();

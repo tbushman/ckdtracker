@@ -350,16 +350,20 @@ router.get('/daterange/:namekey/:begin/:end', function(req, res, next){
 		var dates = data[0].data.map(function(doc){
 			return doc.date;
 		})
+		var indexes = data[0].data.map(function(doc){
+			return doc.index;
+		})
 		var skip, limit;
 		var datearr = dates;
 		dates.forEach(function(date, i){
-			if (date >= begin && date <= end) {
-				datearr.splice(i,1)
+			if (date > begin && date < end) {
+				indexes.splice(indexes.indexOf(i),1)
 			}
 		})
 		datearr.sort();
-		skip = datearr[0];
-		limit = datearr[datearr.length - 1];
+		skip = indexes[0];
+		limit = indexes.length;
+		console.log(skip, limit)
 		require('../models/measures.js')({collection: namekey}).find({'data.date':{$gte: begin, $lte: end}}, { data: {$slice: [skip, limit] } }).lean().exec(function(err, result){
 			if (err) {
 				return next(err)
@@ -493,6 +497,7 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 	var body = req.body;
 	var keys = Object.keys(body);
 	var username = req.params.namekey;
+	var index = parseInt(req.params.index, 10);
 
 	req.measurements = require('../models/measures.js')({collection: username});
 
@@ -505,13 +510,12 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 			return res.redirect('/')
 			
 		} else {
-			req.measurements.find({'data.date': body.date}).lean().exec(function(err, measures) {
+			req.measurements.find({'data.index': index}).lean().exec(function(err, measures) {
 				if (err) {
 					return next(err)
 				}
 				console.log(measures)
 				var date = body.date
-				var index = parseInt(req.params.index, 10);
 				keys.splice(keys.indexOf('date'), 1);
 				if (!err && measures.length === 0) {
 					// new
@@ -539,7 +543,7 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 						if (err) {
 							console.log(err)
 						}
-						return res.redirect('/api/'+data[0].patient+'/'+index+'/true')
+						return res.redirect('/api/'+data[0].patient+'/'+index+'/false')
 						
 						
 					})
@@ -547,18 +551,20 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 					// edit
 					Object.keys(body).forEach(function(key, i){
 						
-						var query = {key: key, data:{$elemMatch:{date: body.date}}};
+						var query = {key: key, data:{$elemMatch:{index: index}}};
 						var set = {$set:{}}
 						var k = 'data.$.val'
+						var d = 'data.$.date'
 						set.$set[k] = body[key]
+						set.$set[d] = date
 						req.measurements.findOneAndUpdate(query, set, {new: true, safe: true, upsert: false}, function(err, doc){
 							if (err) {
 								console.log(err)
 							}
-							console.log(doc)
+							//console.log(doc)
 						})
 					})
-					return res.redirect('/api/'+data[0].patient+'/'+index+'/true')
+					return res.redirect('/api/'+data[0].patient+'/'+index+'/false')
 				}
 			})
 		}
