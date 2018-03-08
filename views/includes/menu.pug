@@ -18,9 +18,10 @@ navbar.navbar-default.navbar-fixed-top
 						h6.subtitle #{appTitle}
 
 					ul.nav.navbar-nav.col-xs-7.col-sm-12
-						li.nav-item
-							a.nav-link.col-sm-12(role="button", href="/login")
-								span Login 
+						if (!edit)
+							li.nav-item
+								a.nav-link.col-sm-12(role="button", href="/login")
+									span Login 
 						li.nav-item
 							a.nav-link.col-sm-12(role="button", href="/view/sophiabushman")
 								span Example
@@ -115,23 +116,24 @@ navbar.navbar-default.navbar-fixed-top
 							form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+index+"", method="POST", role="form", enctype="multipart/form-data")
 								//input(type="hidden", name="olddate", value=result[0].data[index].date)
 								
-								div.col-xs-6.container-fluid
+								div.col-xs-12.col-sm-4.container-fluid
 									- var month = (new Date(result[0].data[index].date).getMonth() + 1)
 									- var date = (new Date(result[0].data[index].date).getDate() )
 									h6 Editing data for 
-										span#msg-currentdate
-											span #{new Date(result[0].data[index].date).getFullYear()}
-											span -
-											span #{month}
-											span -
-											span #{date}
-											span
-												h6 
-													span #{result[0].data[index].date}
+										//-
+											span#msg-currentdate
+												span #{new Date(result[0].data[index].date).getFullYear()}
+												span -
+												span #{month}
+												span -
+												span #{date}
+												span
+													h6 
+										span #{result[0].data[index].date}
 										
-								div.col-xs-6.container-fluid#editdate
+								div.col-xs-6.col-sm-4.container-fluid#editdate
 									div.row
-										div.col-xs-6
+										div.col-xs-12
 											h6 Edit date
 											div.form-group.panel.panel-default
 												div.input-group.date#new_date
@@ -139,28 +141,27 @@ navbar.navbar-default.navbar-fixed-top
 													span.input-group-addon
 														span.i.fa.fa-calendar(aria-hidden="true")
 											p &nbsp
-										div.col-xs-6
-										if (result)
-											div.new.form-group#choosedate.col-xs-6(style="margin-bottom: 0;")
-												div.row
-													div.col-xs-6
-														if (edit && edit !== 'false')
-															label.btn-block(for="date", style="text-align: right;") Edit a different entry
-														else
-															label.btn-block(for="date", style="text-align: right;") View data by date
-													div.col-xs-6
-														select.form-control.btn-block(name="date", id="date")
-															
-															each yr, j in dateobjs
-																if (yr.ind === index)
-																	option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= true)
-																		span #{yr.date}
+								if (result)
+									div.new.form-group#choosedate.col-xs-6.col-sm-4(style="margin-bottom: 0;")
+										div.row
+											div.col-xs-12
+												if (edit && edit !== 'false')
+													label.btn-block(for="date", style="text-align: right;") Edit a different entry
+												else
+													label.btn-block(for="date", style="text-align: right;") View data by date
+											div.col-xs-12
+												select.form-control.btn-block(id="date")
+													
+													each yr, j in dateobjs
+														if (yr.ind === index)
+															option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= true)
+																span #{yr.date}
 
-																else
-																	option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= false)
-																		span #{yr.date}
-															
-														p
+														else
+															option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= false)
+																span #{yr.date}
+													
+												p
 											
 
 								each mea, j in data

@@ -89,6 +89,19 @@ block content
 					$($('#hideedit').click())
 					
 				}
+				$('.date').datepicker({
+					format: {
+					
+						toDisplay: function (date, format, language) {
+							var d = new Date(date);
+							return new Date(d);
+						},
+						toValue: function (date, format, language) {
+							var d = new Date(date);
+							return new Date(d);
+						}
+					}
+				})
 				graphIt(!{JSON.stringify(data)}, !{JSON.stringify(result)}, !{JSON.stringify(dots)}, myWidth, myHeight);
 				
 			}
@@ -134,12 +147,11 @@ block content
 				setDates: sortedDataByDate.map(function (v){getDate(v.date)}),
 				keepEmptyValues: false,
 				autoclose: true,
-				//defaultViewDate: new Date(minDate),
 				format: {
 				
 					toDisplay: function (date, format, language) {
 						var d = new Date(date);
-						return d.toISOString();
+						return new Date(d);
 					},
 					toValue: function (date, format, language) {
 						var d = new Date(date);
@@ -173,7 +185,7 @@ block content
 				
 					toDisplay: function (date, format, language) {
 						var d = new Date(date);
-						return d.toISOString();
+						return new Date(d);
 					},
 					toValue: function (date, format, language) {
 						var d = new Date(date);

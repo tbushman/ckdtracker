@@ -497,7 +497,6 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 	var keys = Object.keys(body);
 	var username = req.params.namekey;
 	var index = parseInt(req.params.index, 10);
-
 	req.measurements = require('../models/measures.js')({collection: username});
 
 	req.measurements.find({}, function(err, data){
@@ -514,7 +513,14 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 					return next(err)
 				}
 				//console.log(measures)
-				var date = body.date
+				var date;
+				var datestr = body.date.toString();
+				if (!datestr.split('/')[1]) {
+					
+					date = new Date(body.date)
+				} else {
+					date = moment([datestr.split('/')[2], parseInt(datestr.split('/')[0], 10) - 1, datestr.split('/')[1]]).utc().format();
+				}
 				keys.splice(keys.indexOf('date'), 1);
 				if (!err && measures.length === 0) {
 					// new
@@ -528,7 +534,7 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 									name: key,
 									index: index,
 									val: body[key],
-									date: new Date(date),
+									date: date,//new Date(date),
 									high: getIntervalFor(key, 'us').interval[1],
 									low: getIntervalFor(key, 'us').interval[0],
 									unit: getIntervalFor(key, 'us').unit
@@ -559,7 +565,7 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 						var k = 'data.$.val'
 						var d = 'data.$.date'
 						set.$set[k] = body[key]
-						set.$set[d] = new Date(date)
+						set.$set[d] = moment(date).utc().format()
 						req.measurements.findOneAndUpdate(query, set, {new: true, safe: true, upsert: false}, function(err, doc){
 							if (err) {
 								console.log(err)

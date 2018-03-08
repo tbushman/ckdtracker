@@ -172,3 +172,9 @@ form {
 	box-sizing: border-box;
 	overflow: hidden;
 }
+
+@media (max-height: 400px) {
+	.navbar-collapse {
+		max-height: 400px;
+	}
+}
