@@ -266,13 +266,11 @@ block content
 					var rangeline = $(this).siblings('.rangeline')
 					//$(rangeline).attr("opacity", 1);
 					$(rangeline).attr("opacity", 1);
-					$(this).attr("stroke-width", "2");
 					$(this).siblings('.rangelabel').attr("opacity", 1);
 				})
 				.on("mouseout", function(d){
 					var rangeline = $(this).siblings('.rangeline')
-					$(rangeline).attr("opacity", 0.25);
-					$(this).attr("stroke-width", "0.5");
+					$(rangeline).attr("opacity", 0);
 
 					$(this).siblings('.rangelabel').attr("opacity", 0);
 				});
@@ -283,32 +281,10 @@ block content
 					return rangeLineHigh(d.data)
 				})
 				.attr("stroke", "#999999")
-				.attr("stroke-width", "1"
-				/*function(d){
-					var count = 0;
-					var grid = d.data.map(function(c){
-						return coincidentPoints( parseInt(x(getDate(c.date)),10), parseInt(y(c.val),10) )
-					});
-					var count = 0;
-					d.data.forEach(function(gr, i){
-						grid.forEach(function(arr, k){
-							arr.forEach(function(ar, l){
-								ar.forEach(function(ar2, j){
-									console.log(ar2)
-									if (ar2.indexOf(x(getDate(d.data[i].date)) !== -1 && ar2.indexOf(y(d.data[i].val)) !== -1)) {
-										count++
-									}
-								})
-							})
-							
-						})
-					})
-					return count;
-				}*/
-				)
+				.attr("stroke-width", "1")
 				
 				.attr("stroke-dasharray", "4,3")
-				.attr("opacity", .25)
+				.attr("opacity", 0)
 				//.transition().duration(2000);
 
 			
@@ -318,32 +294,9 @@ block content
 					return rangeLineLow(d.data)
 				})
 				.attr("stroke", "#999999")
-				.attr("stroke-width", "1"
-				/*function(d){
-					var count = 0;
-					var grid = d.data.map(function(c){
-						return coincidentPoints( parseInt(x(getDate(c.date)),10), parseInt(y(c.val),10) )
-					});
-					var count = 0;
-					d.data.forEach(function(gr, i){
-						grid.forEach(function(arr, k){
-							arr.forEach(function(ar, l){
-								ar.forEach(function(ar2, j){
-									console.log(ar2)
-									if (ar2.indexOf(x(getDate(d.data[i].date)) !== -1 && ar2.indexOf(y(d.data[i].val)) !== -1)) {
-										count++
-									}
-								})
-							})
-							
-						})
-					})
-					
-					return count;
-				}*/
-				)
+				.attr("stroke-width", "1")
 				.attr("stroke-dasharray", "4,3")
-				.attr("opacity", .25)
+				.attr("opacity", 0)
 				//.transition().duration(2000);
 				
 			var thispath = path._groups[0];
@@ -437,7 +390,7 @@ block content
 			}).on("mouseout", function(d){
 				d3.select(this).style("opacity", 0);
 				$('.measurement_'+d.name+'').find('.rangeline').attr('opacity', '0.5');
-				$('.measurement_'+d.name+'').find('.rangelabel').attr('opacity', '0.5');
+				$('.measurement_'+d.name+'').find('.rangelabel').attr('opacity', '0');
 				$(".tt").hide();
 			});
 		}
