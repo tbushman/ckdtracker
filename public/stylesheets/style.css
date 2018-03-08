@@ -104,16 +104,18 @@ form {
 .axis .axis-label {
 	font-size: 14px;
 }
- 
+
+.line {
+	stroke-width: 2px;
+	
+}
 .line, .rangeline {
 	fill: none;
 	stroke: #999999;
-	stroke-width: 1.5px;
 }
 .rangeline, .rangelabel {
 	transition-property: opacity;
 	transition-duration: 0.3s;
-	opacity: 0.25;
 }
 .dot {
 	/* consider the stroke-with the mouse detect radius? */

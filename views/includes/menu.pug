@@ -14,14 +14,16 @@ navbar.navbar-default.navbar-fixed-top
 					span.icon-bar
 					span.icon-bar
 				if (result)
-					a.navbar-brand(href="#") #{result[0].patient}
+					a.navbar-brand.col-xs-4.col-sm-12(href="#") #{result[0].patient}
 						h6.subtitle #{appTitle}
 
-					ul.nav.navbar-nav
+					ul.nav.navbar-nav.col-xs-7.col-sm-12
 						li.nav-item
-							a.col-xs-12.nav-link(href="/login") Login
+							a.nav-link.col-sm-12(role="button", href="/login")
+								span Login 
 						li.nav-item
-							a.col-xs-12.nav-link(href="/view/sophiabushman") Example
+							a.nav-link.col-sm-12(role="button", href="/view/sophiabushman")
+								span Example
 					
 				else
 					a.navbar-brand(href="#") #{appTitle}

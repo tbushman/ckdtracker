@@ -254,11 +254,14 @@ block content
 					var rangeline = $(this).siblings('.rangeline')
 					//$(rangeline).attr("opacity", 1);
 					$(rangeline).attr("opacity", 1);
+					$(this).attr("stroke-width", "2");
 					$(this).siblings('.rangelabel').attr("opacity", 1);
 				})
 				.on("mouseout", function(d){
 					var rangeline = $(this).siblings('.rangeline')
 					$(rangeline).attr("opacity", 0.25);
+					$(this).attr("stroke-width", "0.5");
+
 					$(this).siblings('.rangelabel').attr("opacity", 0);
 				});
 			
@@ -268,7 +271,8 @@ block content
 					return rangeLineHigh(d.data)
 				})
 				.attr("stroke", "#999999")
-				.attr("stroke-width", function(d){
+				.attr("stroke-width", "1"
+				/*function(d){
 					var count = 0;
 					var grid = d.data.map(function(c){
 						return coincidentPoints( parseInt(x(getDate(c.date)),10), parseInt(y(c.val),10) )
@@ -288,7 +292,8 @@ block content
 						})
 					})
 					return count;
-				})
+				}*/
+				)
 				
 				.attr("stroke-dasharray", "4,3")
 				.attr("opacity", .25)
@@ -301,7 +306,8 @@ block content
 					return rangeLineLow(d.data)
 				})
 				.attr("stroke", "#999999")
-				.attr("stroke-width", function(d){
+				.attr("stroke-width", "1"
+				/*function(d){
 					var count = 0;
 					var grid = d.data.map(function(c){
 						return coincidentPoints( parseInt(x(getDate(c.date)),10), parseInt(y(c.val),10) )
@@ -322,7 +328,8 @@ block content
 					})
 					
 					return count;
-				})
+				}*/
+				)
 				.attr("stroke-dasharray", "4,3")
 				.attr("opacity", .25)
 				//.transition().duration(2000);
@@ -396,6 +403,8 @@ block content
 				var displayVal = d.val.toFixed(1);
 				$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='date col-xs-6' style='text-align: right;'>"+d.name.toUpperCase()+"</div><div class='col-xs-12'><h4 class='quote' style='color: "+color(d.name)+"!important; text-align: right;'><strong>"+displayVal+"</strong></h4></div></div>");
 				$('.tt').show();
+				$('.measurement_'+d.name+'').find('.rangeline').attr('opacity', '1');
+				$('.measurement_'+d.name+'').find('.rangelabel').attr('opacity', '1');
 				d3.select(this).style("opacity", 1);
 				
 			}).on("mousemove", function(d){
@@ -415,6 +424,8 @@ block content
 				}
 			}).on("mouseout", function(d){
 				d3.select(this).style("opacity", 0);
+				$('.measurement_'+d.name+'').find('.rangeline').attr('opacity', '0.5');
+				$('.measurement_'+d.name+'').find('.rangelabel').attr('opacity', '0.5');
 				$(".tt").hide();
 			});
 		}
