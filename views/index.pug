@@ -328,7 +328,7 @@ block content
 				.attr("dy", "-5px")
 				.attr("opacity", 0)
 				.text(function (d, i) {
-					return d.data[0].high +""+ d.data[0].unit;
+					return "h: "+d.data[0].high +""+ d.data[0].unit;
 				})
 				.attr("style", "font-size: 10px;")
 				.transition().duration(2000);
@@ -342,7 +342,7 @@ block content
 				.attr("dy", "10px")
 				.attr("opacity", 0)
 				.text(function (d, i) {
-					return d.data[0].low +""+ d.data[0].unit;
+					return "l: "+d.data[0].low +""+ d.data[0].unit;
 				})
 				.attr("style", "font-size: 10px;")
 				.transition().duration(2000);
@@ -389,7 +389,7 @@ block content
 				}
 			}).on("mouseout", function(d){
 				d3.select(this).style("opacity", 0);
-				$('.measurement_'+d.name+'').find('.rangeline').attr('opacity', '0.5');
+				$('.measurement_'+d.name+'').find('.rangeline').attr('opacity', '0');
 				$('.measurement_'+d.name+'').find('.rangelabel').attr('opacity', '0');
 				$(".tt").hide();
 			});
