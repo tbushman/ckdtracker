@@ -16,12 +16,12 @@ block content
 			var id = $(this).attr('id');
 			var key = id.split('reveal_')[1];
 			if (!$(this).attr('checked')) {
-				$.post('/api/reveal/'+'!{result[0].patient}'+'/'+key+'/', function(){
-					window.location.href = '/';
+				$.post('/reveal/'+'!{result[0].patient}'+'/'+key+'/', function(){
+					window.location.href = '/view/'+'!{result[0].patient}';
 				});
 			} else {
-				$.post('/api/hide/'+'!{result[0].patient}'+'/'+key+'/', function(){
-					window.location.href = '/';
+				$.post('/hide/'+'!{result[0].patient}'+'/'+key+'/', function(){
+					window.location.href = '/view/'+'!{result[0].patient}';
 				});
 			}
 		})

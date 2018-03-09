@@ -104,12 +104,9 @@ function ensureContent(req, res, next) {
 			req.session.measure = req.user.username;
 			return res.redirect('/api/'+req.user.username+'/0/false')
 		} else {
-			if (req.params.namekey) {
-				req.session.measure = req.params.namekey;
-				return res.redirect('/view/'+req.params.namekey)
-			} else {
-				return res.redirect('/logout')
-			}
+			req.measurements = require('../models/measures.js')({collection: req.params.namekey});
+			req.session.measure = req.params.namekey;
+			return next();//res.redirect('/view/'+req.params.namekey)
 		}
 	}
 }
@@ -450,7 +447,7 @@ router.get('/api/checkdate/:namekey/:date', ensureContent, function(req, res, ne
 	})
 })
 
-router.post('/api/reveal/:namekey/:key', ensureContent, function(req, res, next){
+router.post('/reveal/:namekey/:key', ensureContent, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
 	//console.log(outputPath) 
 	var set = {$set:{}};
@@ -460,13 +457,14 @@ router.post('/api/reveal/:namekey/:key', ensureContent, function(req, res, next)
 		if (err) {
 			return next(err)
 		}
+		//console.log(result)
 		return res.send('ok')
 	}) 
 })
 
-router.post('/api/hide/:namekey/:key', ensureContent, function(req, res, next){
+router.post('/hide/:namekey/:key', ensureContent, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
-	//console.log(outputPath); 
+	console.log(outputPath); 
 	var set = {$set:{}};
 	var key = 'vis'
 	set.$set[key] = false;
