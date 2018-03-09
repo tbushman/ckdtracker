@@ -538,7 +538,7 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 									unit: getIntervalFor(key, 'us').unit
 
 								};
-								req.measurements.findOneAndUpdate({key: key}, {$push:{data:{$each: [mea], $sort: {date: 1}}}}, {safe: true, multi: false, upsert: false}, function(err, doc){
+								req.measurements.findOneAndUpdate({key: key}, {$push:{data:{$each: [mea], $sort: {date: 1}, $slice:data[0].data.length}}}, {safe: true, multi: false, upsert: false}, function(err, doc){
 									if (err) {
 										console.log(err)
 									}
