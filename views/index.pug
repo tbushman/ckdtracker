@@ -108,6 +108,19 @@ block content
 			
 		});
 		function graphIt(datas, dat, dots, w, h){
+			// sort embedded datarrays 
+			[datas, dat].forEach(function(d){
+				d.forEach(function(c){
+					c.data.sort(function(a,b){ 
+						if (getDate(a.date) < getDate(b.date)) {
+							return -1
+						} else if (getDate(a.date) > getDate(b.date)) {
+							return 1
+						}
+						
+					})
+				})
+			})
 			// set up size
 			var margin = { top: 20, right: 20, bottom: 140, left: 40};
 			var width = w - margin.left - margin.right;
