@@ -78,7 +78,7 @@ navbar.navbar-default.navbar-fixed-top
 													span Add Data
 						div.col-xs-12.col-sm-9.col-lg-10.col-xl-12#modal_new(style="display: none; max-height: 300px; overflow-y: scroll;")
 							
-							form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+(index + 1)+"", method="POST", role="form", enctype="multipart/form-data")
+							form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+result[0].data.length+"", method="POST", role="form", enctype="multipart/form-data")
 								div.col-xs-12
 									div.row
 										div.col-xs-12.new.container-fluid
