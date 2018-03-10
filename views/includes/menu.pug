@@ -97,7 +97,7 @@ navbar.navbar-default.navbar-fixed-top
 											
 												div.row.container-fluid
 													div.col-xs-12.col-sm-8
-														label(for= mea.key) #{mea.key.toUpperCase()}
+														label(for= mea.key) #{mea.key.replace('per_', '%').toUpperCase()}
 													div.col-xs-12.col-sm-4.input-group
 														input.btn-block.form-control(type="number", step="0.1", name= mea.key, value="0")
 									div.row
@@ -115,67 +115,60 @@ navbar.navbar-default.navbar-fixed-top
 						div.col-xs-12.col-sm-9.col-lg-10.col-xl-12#modal_edit(style="display: none; max-height: 300px; overflow-y: scroll;")
 							form.row.navbar-form.navbar-left(action="/api/add/"+result[0].patient+"/"+index+"", method="POST", role="form", enctype="multipart/form-data")
 								//input(type="hidden", name="olddate", value=result[0].data[index].date)
-								
-								div.col-xs-12.col-sm-4.container-fluid
-									- var month = (new Date(data[0].data[index].date).getMonth() + 1)
-									- var date = (new Date(data[0].data[index].date).getDate() )
-									h6 Editing data for 
-										//-
-											span#msg-currentdate
-												span #{new Date(result[0].data[index].date).getFullYear()}
-												span -
-												span #{month}
-												span -
-												span #{date}
-												span
-													h6 
-										span #{data[0].data[index].date}
-										
-								div.col-xs-6.col-sm-4.container-fluid#editdate
-									div.row
-										div.col-xs-12
-											h6 Edit date
-											div.form-group.panel.panel-default
-												div.input-group.date#new_date
-													input.form-control.btn-block(type="text", name="date", data-provide="datepicker", value= data[0].data[index].date)
-													span.input-group-addon
-														span.i.fa.fa-calendar(aria-hidden="true")
-											p &nbsp
-								if (result)
-									div.new.form-group#choosedate.col-xs-6.col-sm-4(style="margin-bottom: 0;")
+								div.row
+									div.col-xs-12.col-sm-4.container-fluid
+										- var month = (new Date(data[0].data[index].date).getMonth() + 1)
+										- var date = (new Date(data[0].data[index].date).getDate() )
+										h6 Editing data for 
+											span #{data[0].data[index].date}
+											
+									div.col-xs-6.col-sm-4.container-fluid#editdate
 										div.row
 											div.col-xs-12
-												if (edit && edit !== 'false')
-													label.btn-block(for="date", style="text-align: right;") Edit a different entry
-												else
-													label.btn-block(for="date", style="text-align: right;") View data by date
-											div.col-xs-12
-												select.form-control.btn-block(id="date")
-													
-													each yr, j in dateobjs
-														if (yr.ind === index)
-															option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= true)
-																span #{yr.date}
+												div.row
+													div.col-xs-12
+														label(for="date") Edit date for this entry
+												div.form-group.panel.panel-default
+													div.input-group.date#new_date
+														input.form-control.btn-block(type="text", name="date", data-provide="datepicker", value= data[0].data[index].date)
+														span.input-group-addon
+															span.i.fa.fa-calendar(aria-hidden="true")
+												p &nbsp
+									if (result)
+										div.new.form-group#choosedate.col-xs-6.col-sm-4(style="margin-bottom: 0;")
+											div.row
+												div.col-xs-12
+													if (edit && edit !== 'false')
+														label(for="date", style="text-align: right;") Edit a different entry
+													else
+														label(for="date", style="text-align: right;") View data by date
+												div.col-xs-12
+													select.form-control.btn-block(id="date")
+														
+														each yr, j in dateobjs
+															if (yr.ind === index)
+																option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= true)
+																	span #{yr.date}
 
-														else
-															option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= false)
-																span #{yr.date}
-													
-												p
+															else
+																option(value=(new Date(yr)), id="selected_"+yr.ind+"", selected= false)
+																	span #{yr.date}
+														
+													p
 											
-
-								each mea, j in data
-									
-									div.col-xs-12.col-sm-6.col-md-4.col-lg-3
-									
-									
-										div.row.container-fluid.form-group
-											div.col-xs-12.col-sm-8
+								div.row
+									each mea, j in data
 										
-												label(for= mea.key) #{mea.key.toUpperCase()}
-											div.col-xs-12.col-sm-4.input-group
-												input.btn-block.form-control(type="number", step="0.1", name= mea.key, value= mea.data[index].val)
-									
+										div.col-xs-12.col-sm-6.col-md-4.col-lg-3
+										
+										
+											div.row.container-fluid.form-group
+												div.col-xs-12.col-sm-8
+											
+													label(for= mea.key) #{mea.key.replace('per_', '%').toUpperCase()}
+												div.col-xs-12.col-sm-4.input-group
+													input.btn-block.form-control(type="number", step="0.1", name= mea.key, value= mea.data[index].val)
+										
 								div.row
 									div.col-xs-12
 										div.row
