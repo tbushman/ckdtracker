@@ -398,7 +398,7 @@ block content
 			})
 			.on("mouseover", function(d, i){
 				var getThisDate = getDate(d.date);
-				var displayDate = ''+(getThisDate.getMonth()+1)+'/'+getThisDate.getDate()+'/'+getThisDate.getFullYear()+'';
+				var displayDate = getThisDate.toISOString().split('T')[0];
 				var displayVal = d.val.toFixed(1);
 				$('.tt').html("<div class='row'><div class='date col-xs-6'>"+displayDate+"</div><div class='date col-xs-6' style='text-align: right;'>"+d.name.toUpperCase()+"</div><div class='col-xs-12'><h4 class='quote' style='color: "+color(d.name)+"!important; text-align: right;'><strong>"+displayVal+"</strong></h4></div></div>");
 				$('.tt').show();
