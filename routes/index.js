@@ -58,6 +58,40 @@ function getIntervalFor(key, loc){
 	return intervals[key][loc]
 }
 
+function ensureEmbeddedIndex(req, res, next) {
+	var username = req.params.namekey;
+	req.measurements = require('../models/measures.js')({collection: username});
+	req.measurements.find({}).sort({'data.date': 1}).lean().exec(function(dat){
+		for (var i in dat) {
+			var data = dat.data.sort(function(a,b){
+				if (moment(a.date).utc().format() > moment(b.date).utc().format()) {
+					return -1;
+				} else if (moment(a.date).utc().format() < moment(b.date).utc().format()) {
+					return 1;
+				}
+			})
+			var count = 0;
+			data.forEach(function(ind, i){
+				if (ind.index !== i) {
+					ind.index = i;
+					count++;
+				}
+			})
+			if (count > 0) {
+				req.measurements.findOneAndUpdate({_id: m._id}, {$set:{data:JSON.parse(JSON.stringify(data))}}, {$multi: false}, function(err, data){
+					if (err) {
+						return next(err)
+					}
+				})
+			}
+		}
+
+		return next();
+	})
+		
+
+}
+
 //for all /api/*
 function ensureAuthenticated(req, res, next) {
 	if (!req.isAuthenticated()) { 
@@ -292,7 +326,7 @@ router.get('/init/:namekey', ensureAuthenticated, function(req, res, next) {
 })
 
 
-router.get('/view/:namekey', ensureContent, function(req, res, next){
+router.get('/view/:namekey', ensureContent, ensureEmbeddedIndex, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
 	var username = req.params.namekey;
 	require('../models/measures.js')({collection: username}).find().lean().exec(function(err, data){
@@ -538,7 +572,10 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 									unit: getIntervalFor(key, 'us').unit
 
 								};
-								req.measurements.findOneAndUpdate({key: key}, {$push:{data:{$each: [mea], $sort: {date: 1}, $slice:data[0].data.length}}}, {safe: true, multi: false, upsert: false}, function(err, doc){
+								
+								
+								
+								req.measurements.findOneAndUpdate({key: key}, {$push:{data:{$each: [mea], $position: {date: 1}}}}, {safe: true, multi: false, upsert: false}, function(err, doc){
 									if (err) {
 										console.log(err)
 									}
