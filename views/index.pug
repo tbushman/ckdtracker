@@ -65,14 +65,10 @@ block content
 			}
 			if ('!{JSON.stringify(dots)}' !== '') {
 				$('select').on('change', function(e){
-					console.log(e.target.children)
 					if ('!{result}' !== '') {
 						$(e.target).children('option').each(function(i, opt){
-							console.log(opt.selected)
 							var ind = parseInt(opt.getAttribute('id').split('selected_')[1], 10)
 							if (opt.selected) {
-								console.log(ind)
-								
 								window.location.href = '/api/'+'!{result[0].patient}'+'/'+ind+'/true';
 								//$.post('/api/'+result[0].patient+'/'+i+'')
 							}
@@ -94,11 +90,11 @@ block content
 					
 						toDisplay: function (date, format, language) {
 							var d = new Date(date);
-							return new Date(d);
+							return d;
 						},
 						toValue: function (date, format, language) {
 							var d = new Date(date);
-							return new Date(d);
+							return d;
 						}
 					}
 				})
@@ -137,6 +133,31 @@ block content
 			.attr("height", height + margin.top + margin.bottom).append("g")
 			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+			/*function filterDataByDate(begin, end) {
+				var filteredDat = datas.map(function(d){
+					d.data.filter(function(c){
+						return (getDate(c.date) >= begin && getDate(c.date) <= end); 
+					})
+					return d;
+				})
+				var filteredResult = dat.map(function(d){
+					d.data.filter(function(c){
+						return (getDate(c.date) >= begin && getDate(c.date) <= end); 
+					})
+					return d;
+				})
+				var filteredDots = [];
+				for (var j in filteredResult) {
+					for (var i in filteredResult[j].data) {
+						var datObj = filteredResult[j].data[i];
+						if (isNaN(Object.keys(datObj))) {
+							filteredDots.push(datObj)
+						}
+					}
+				}	
+				console.log(filteredResult)
+				return graphIt(filteredDat, filteredResult, filteredDots, w, h)
+			}*/
 			function getDate(d) {
 				return new Date(d);
 			}
@@ -148,9 +169,9 @@ block content
 			var absMaxDate = d3.max(datas[0].data, function(c){return getDate(c.date)})
 			var sortedDataByDate = dat[0].data.sort(function(a,b){
 				if (new Date(a.date)<new Date(b.date)) {
-					return a.date - b.date;
+					return -1;
 				} else {
-					return b.date - a.date;
+					return 1;
 				}
 			});
 
@@ -164,11 +185,11 @@ block content
 				
 					toDisplay: function (date, format, language) {
 						var d = new Date(date);
-						return new Date(d);
+						return d;
 					},
 					toValue: function (date, format, language) {
 						var d = new Date(date);
-						return new Date(d);
+						return d;
 					}
 				}
 			})
@@ -180,14 +201,14 @@ block content
 				defaultViewDate: new Date(maxDate)
 			});
 			$('.daterange').on('change', function(e){
-				var begin = //moment((
-					$('.range0').val()
-				//)).utc().format();
-				var end = //moment((
-					$('.range1').val()
-				//)).utc().format();
+				var begin = new Date($('.range0').val())
+				var end = new Date($('.range1').val())
+				$('.daterange').not($(this)).focus();
 				if (begin && end) {
-					window.location.href = '/daterange/'+'!{result[0].patient}'+'/'+begin+'/'+end+''
+					console.log(begin, end)
+					if (begin !== 'Invalid date' && end !== 'Invalid date') {	
+						window.location.href = '/daterange/'+'!{result[0].patient}'+'/'+begin+'/'+end+''
+					}
 				}
 			})
 			$('#new_date').datepicker({
@@ -198,11 +219,11 @@ block content
 				
 					toDisplay: function (date, format, language) {
 						var d = new Date(date);
-						return new Date(d);
+						return d;
 					},
 					toValue: function (date, format, language) {
 						var d = new Date(date);
-						return new Date(d);
+						return d;
 					}
 				}
 			});

@@ -234,7 +234,7 @@ router.post('/register', function(req, res, next) {
 
 router.get('/init/:namekey', ensureAuthenticated, function(req, res, next) {
 	var outputPath = url.parse(req.url).pathname;
-	console.log(outputPath)
+	//console.log(outputPath)
 	async.waterfall([
 		function(next){
 			var username = req.user.username;
@@ -369,10 +369,11 @@ router.get('/view/:namekey', ensureContent, ensureEmbeddedIndex, function(req, r
 	})
 })
 
-router.get('/daterange/:namekey/:begin/:end', function(req, res, next){
+router.get('/daterange/:namekey/:begin/:end', ensureEmbeddedIndex, function(req, res, next){
 	var namekey = req.params.namekey;
-	var begin = moment(req.params.begin).utc().format();
-	var end = moment(req.params.end).utc().format();
+	var begin = req.params.begin;
+	var end = req.params.end;
+	//console.log(begin, end)
 	require('../models/measures.js')({collection: namekey}).find({}).lean().exec(function(err, data){
 		if (err) {
 			return next(err)
@@ -386,22 +387,48 @@ router.get('/daterange/:namekey/:begin/:end', function(req, res, next){
 		var skip, limit;
 		var datearr = dates;
 		dates.forEach(function(date, i){
-			if (date > begin && date < end) {
+			if (moment(date).utc().format() < begin) {
 				indexes.splice(indexes.indexOf(i),1)
 			}
 		})
 		datearr.sort();
-		skip = indexes[0];
+		indexes.sort();
+		skip = 0;
 		limit = indexes.length;
 		//console.log(skip, limit)
-		require('../models/measures.js')({collection: namekey}).find({'data.date':{$gte: begin, $lte: end}}, { data: {$slice: [skip, limit] } }).lean().exec(function(err, result){
+		req.measurements = require('../models/measures.js')({collection: namekey});
+		req.measurements.aggregate([
+			{
+				$project: {
+					patient: 1,
+					key: 1,
+					vis: 1,
+					data: {
+						$filter: {
+							input: '$data',
+							as: 'dat',
+							cond: {
+								$and: [
+									{$gte:['$$dat.date', new Date(begin)]},
+									{$lte:['$$dat.date', new Date(end)]}
+								]
+							}
+						}
+					}
+				}
+			}
+		]).exec(function(err, result){
+		//req.measurements.find({'data.date':{$gte: begin, $lte: end}}, { data: {$slice: [skip, limit] } }).lean().exec(function(err, result){
 			if (err) {
 				return next(err)
 			}
 			var dots = [];
 			var keys = [];
 			//result = result.toObject();
-			
+			//console.log(result)
+			if (result[0].data.length === 0) {
+				return res.redirect('/view/'+namekey)
+			}
 			for (var j in result) {
 				for (var i in result[j].data) {
 					var datObj = result[j].data[i];
@@ -412,7 +439,7 @@ router.get('/daterange/:namekey/:begin/:end', function(req, res, next){
 				keys.push(result[j].key)
 			}	
 			return res.render('index', {
-				index: data[0].data[result[0].data.length - 1].index,
+				index: result[0].data[result[0].data.length - 1].index,
 				data: data,
 				result: result,
 				dots: dots,
@@ -558,38 +585,53 @@ router.post('/api/add/:namekey/:index', upload.array(), ensureContent, function(
 					// new
 					async.waterfall([
 						function(cb){
+							//get position
+							req.measurements.find({}).lean().exec(function(err, data) {
+								if (err) {
+									cb(err)
+								}
+								for (var i in data[0].data) {
+									if (data[0].data[i].date < date) {
+										index = data[0].data[i].index;
+									} else {
+										index = index;
+									}
+								}
+								cb(null, index, body, keys, username, date)
+							})
+						},
+						function(index, body, keys, username, date, cb){
 							var username = req.params.namekey;
 
 							req.measurements = require('../models/measures.js')({collection: username});
-							keys.forEach(function(key, i){
-								var mea = {
-									name: key,
-									index: index,
-									val: body[key],
-									date: date,//new Date(date),
-									high: getIntervalFor(key, 'us').interval[1],
-									low: getIntervalFor(key, 'us').interval[0],
-									unit: getIntervalFor(key, 'us').unit
-
-								};
-								
-								
-								
-								req.measurements.findOneAndUpdate({key: key}, {$push:{data:{$each: [mea], $position: {date: 1}}}}, {safe: true, multi: false, upsert: false}, function(err, doc){
-									if (err) {
-										console.log(err)
-									}
+							req.measurements.update({'data.index':{$gte: index}}, {$inc:{index:1}}, function(err, data){
+								if (err) {
+									next(err)
+								}
+								keys.forEach(function(key, i){
+									var mea = {
+										name: key,
+										index: index,
+										val: body[key],
+										date: date,//new Date(date),
+										high: getIntervalFor(key, 'us').interval[1],
+										low: getIntervalFor(key, 'us').interval[0],
+										unit: getIntervalFor(key, 'us').unit
+									};
+									req.measurements.findOneAndUpdate({key: key}, {$push:{data:{$each: [mea], $position: index}}}, {safe: true, multi: false, upsert: false}, function(err, doc){
+										if (err) {
+											console.log(err)
+										}
+									})
 								})
+								cb(null)
 							})
-							cb(null)
 						}
 					], function(err){
 						if (err) {
 							console.log(err)
 						}
 						return res.redirect('/api/'+data[0].patient+'/'+index+'/false')
-						
-						
 					})
 				} else {
 					// edit

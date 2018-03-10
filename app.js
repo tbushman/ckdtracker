@@ -33,6 +33,7 @@ app.set('view engine', 'pug');
 app.locals.$ = require('jquery');
 app.locals._ = require('underscore');
 app.locals.d3 = require('d3');
+app.locals.moment = require('moment');
 app.locals.appTitle = "CKDTracker";
 app.use(favicon(path.join(__dirname, 'public', 'img', 'favicon.ico')));
 

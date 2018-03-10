@@ -1,6 +1,6 @@
 navbar.navbar-default.navbar-fixed-top
 	if (result)
-		- var sortedDocByDate = result[0].data.sort(function(a,b){ if (new Date(a.date)<new Date(b.date)) { return a.date - b.date; } else { return b.date - a.date; } })
+		- var sortedDocByDate = result[0].data.sort(function(a,b){ if (new Date(a.date)<new Date(b.date)) { return -1; } else { return 1; } })
 		- var dateobjs = sortedDocByDate.map(function(c){return {date:new Date(c.date), ind:c.index}})
 		- var dates = sortedDocByDate.map(function(c){return new Date(c.date)})
 		- var indexes = sortedDocByDate.map(function(c){return c.index})
@@ -117,8 +117,8 @@ navbar.navbar-default.navbar-fixed-top
 								//input(type="hidden", name="olddate", value=result[0].data[index].date)
 								
 								div.col-xs-12.col-sm-4.container-fluid
-									- var month = (new Date(result[0].data[index].date).getMonth() + 1)
-									- var date = (new Date(result[0].data[index].date).getDate() )
+									- var month = (new Date(data[0].data[index].date).getMonth() + 1)
+									- var date = (new Date(data[0].data[index].date).getDate() )
 									h6 Editing data for 
 										//-
 											span#msg-currentdate
@@ -129,7 +129,7 @@ navbar.navbar-default.navbar-fixed-top
 												span #{date}
 												span
 													h6 
-										span #{result[0].data[index].date}
+										span #{data[0].data[index].date}
 										
 								div.col-xs-6.col-sm-4.container-fluid#editdate
 									div.row
@@ -137,7 +137,7 @@ navbar.navbar-default.navbar-fixed-top
 											h6 Edit date
 											div.form-group.panel.panel-default
 												div.input-group.date#new_date
-													input.form-control.btn-block(type="text", name="date", data-provide="datepicker", value= result[0].data[index].date)
+													input.form-control.btn-block(type="text", name="date", data-provide="datepicker", value= data[0].data[index].date)
 													span.input-group-addon
 														span.i.fa.fa-calendar(aria-hidden="true")
 											p &nbsp
