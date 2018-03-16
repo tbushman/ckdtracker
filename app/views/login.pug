@@ -1,0 +1,31 @@
+extends layout
+block page
+	- var menu = 'login'
+block content
+	div.container-fluid
+		div.row
+			div.col-xs-9.col-sm-6
+				p Enter username and password
+				form(enctype="multipart/form-data", method="POST", action="/login")
+					div.col-xs-12
+						div.row
+							div.col-xs-12
+								label Username
+							div.col-xs-12
+								input(type="text", name="username")
+					div.col-xs-12
+						div.row
+							div.col-xs-12
+								label Password
+							div.col-xs-12
+								input(type="password", name="password")
+					div.col-xs-12
+						p
+						button.btn.btn-primary.btn-block(type="submit", ariaDescription="Log in")
+							span Log in
+						p
+				div.row
+					div.col-xs-12
+						p First time here?
+						a.btn.btn-primary(href="/register", role="button", ariaDescription="Register") 
+							span Register
