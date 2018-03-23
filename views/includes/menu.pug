@@ -16,15 +16,18 @@ navbar.navbar-default.navbar-fixed-top
 				if (result)
 					a.navbar-brand.col-xs-4.col-sm-12(href="#") #{result[0].patient}
 						h6.subtitle #{appTitle}
-					ul.nav.navbar-nav.col-xs-7.col-sm-12
-						li.nav-item
+					ul
+						li
 							a.nav-link.col-sm-12(role="button", href="/login")
 								span Login 
 				else
-					ul.nav.navbar-nav.col-xs-7.col-sm-12
+					
+					a.navbar-brand.col-xs-4.col-sm-12(href="/")
+						h6.subtitle #{appTitle}
+					ul
 						if (!edit)
 						
-							li.nav-item
+							li
 								a.nav-link.col-sm-12(role="button", href="/view/sophiabushman")
 									span Example
 							
@@ -38,15 +41,6 @@ navbar.navbar-default.navbar-fixed-top
 					div.row.container-fluid
 						div.col-xs-12.col-sm-9.col-lg-10.col-xl-12
 							div.row.panel#control
-								//-
-									div.col-xs-12.col-sm-6
-										h6 Date:
-										div.form-group
-											div.input-group.input-daterange.date#start_date
-												input.form-control.daterange.range0(type="text", data-provide="datepicker", value= dateobjs[0].date)
-												div.input-group-addon to
-												input.form-control.daterange.range1(type="text", data-provide="datepicker", value= dateobjs[dates.length-1].date)
-								
 
 
 								div.col-xs-12.col-sm-3

@@ -17,11 +17,21 @@ block content
 			var key = id.split('reveal_')[1];
 			if (!$(this).attr('checked')) {
 				$.post('/reveal/'+'!{result[0].patient}'+'/'+key+'/', function(){
-					window.location.href = '/view/'+'!{result[0].patient}';
+					console.log(window.location.pathname.split('/')[1])
+					if (window.location.pathname.split('/')[1] === 'api') {
+						window.location.href = window.location.pathname;//'/api/'+'!{result[0].patient}'+'/'+window.location.pathname.split('/')[2]+'/'+window.location.pathname.split('/')[3]+''
+					} else {
+						window.location.href = '/view/'+'!{result[0].patient}';
+					}
 				});
 			} else {
 				$.post('/hide/'+'!{result[0].patient}'+'/'+key+'/', function(){
-					window.location.href = '/view/'+'!{result[0].patient}';
+					console.log(window.location.pathname.split('/')[1])
+					if (window.location.pathname.split('/')[1] === 'api') {
+						window.location.href = window.location.pathname;//'/api/'+'!{result[0].patient}'+'/'+window.location.pathname.split('/')[2]+'/'+window.location.pathname.split('/')[3]+''
+					} else {
+						window.location.href = '/view/'+'!{result[0].patient}';
+					}
 				});
 			}
 		})
