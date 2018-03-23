@@ -174,6 +174,7 @@ router.get('/', function(req, res, next) {
 router.get('/login', function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
 	return res.render('login', { 
+		edit: null
 	});
 });
 

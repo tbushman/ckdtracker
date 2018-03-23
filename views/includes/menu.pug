@@ -16,18 +16,21 @@ navbar.navbar-default.navbar-fixed-top
 				if (result)
 					a.navbar-brand.col-xs-4.col-sm-12(href="#") #{result[0].patient}
 						h6.subtitle #{appTitle}
-
+					ul.nav.navbar-nav.col-xs-7.col-sm-12
+						li.nav-item
+							a.nav-link.col-sm-12(role="button", href="/login")
+								span Login 
+				else
 					ul.nav.navbar-nav.col-xs-7.col-sm-12
 						if (!edit)
+						
 							li.nav-item
-								a.nav-link.col-sm-12(role="button", href="/login")
-									span Login 
-						li.nav-item
-							a.nav-link.col-sm-12(role="button", href="/view/sophiabushman")
-								span Example
+								a.nav-link.col-sm-12(role="button", href="/view/sophiabushman")
+									span Example
+							
 					
-				else
-					a.navbar-brand(href="#") #{appTitle}
+						
+							
 	
 			if (result)
 				div.collapse.navbar-collapse#navbar-collapse-1(style="width: fill;")

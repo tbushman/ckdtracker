@@ -7,8 +7,7 @@ var Publisher = new Schema({
 	password: String,
 	username: {
 		type: String,
-		unique: true,
-		required: true,
+		required: true
 	}
 }, { collection: 'ckd' });
 

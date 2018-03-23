@@ -173,8 +173,9 @@ form {
 	overflow: hidden;
 }
 
-@media (max-height: 400px) {
-	.navbar-collapse {
+@media (max-height: 500px) {
+	#navbar-collapse-1 {
 		max-height: 400px;
+		min-height: 400px;
 	}
 }
