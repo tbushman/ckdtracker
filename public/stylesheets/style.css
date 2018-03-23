@@ -20,6 +20,10 @@ body {
 	padding: 50px 0 50px 0;
 }
 
+li {
+	list-style-type: none;
+}
+
 a {
 	color: #00B7FF;
 }

@@ -14,17 +14,23 @@ navbar.navbar-default.navbar-fixed-top
 					span.icon-bar
 					span.icon-bar
 				if (result)
-					a.navbar-brand.col-xs-4.col-sm-12(href="#") #{result[0].patient}
+					a.navbar-brand.col-xs-4(href="#") #{result[0].patient}
 						h6.subtitle #{appTitle}
-					ul
-						li
-							a.nav-link.col-sm-12(role="button", href="/login")
-								span Login 
+					if (!edit)
+						ul.col-xs-4
+							li
+								a.nav-link.col-sm-12(role="button", href="/login")
+									span Login 
+					else
+						ul.col-xs-4
+							li
+								a.nav-link.col-sm-12(role="button", href="/logout")
+									span Logout 
 				else
 					
 					a.navbar-brand.col-xs-4.col-sm-12(href="/")
 						h6.subtitle #{appTitle}
-					ul
+					ul.col-xs-4
 						if (!edit)
 						
 							li
