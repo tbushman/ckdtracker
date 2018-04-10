@@ -330,6 +330,9 @@ router.get('/init/:namekey', ensureAuthenticated, function(req, res, next) {
 router.get('/view/:namekey', ensureContent, ensureEmbeddedIndex, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
 	var username = req.params.namekey;
+	if (username !== 'sophiabushman') {
+		return res.redirect('/api/'+username+'/'+0+'/'+false)
+	}
 	require('../models/measures.js')({collection: username}).find().lean().exec(function(err, data){
 		if (err) {
 			return next(err)
