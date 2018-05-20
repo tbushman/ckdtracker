@@ -12,50 +12,86 @@ var router = express.Router();
 var upload = multer();
 
 dotenv.load();
-
+const intervals = {
+	albumin: {us:{unit: 'g/dL', interval:[2.6,3.9]}, human:{unit: 'g/dL', interval:[3.5,5.2]}},
+	totalProtein: {us:{unit: 'g/dL', interval:[6.3,8.8]}, human:{unit: 'g/dL', interval:[6.3,8.2]}},
+	globulin: {us:{unit: 'g/dL', interval:[3.0,5.9]}, human:{unit: 'g/dL', interval:[2.6,4.1]}},
+	bun: {us:{unit: 'mg/dL', interval:[16,37]}, human:{unit: 'mg/dL', interval:[7,20]}},
+	creatinine: {us:{unit: 'mg/dL', interval:[0.9,2.5]}, human:{unit: 'mg/dL', interval:[0.7,1.4]}},
+	cholesterol: {us:{unit: 'mg/dL', interval:[91,305]}, human:{unit: 'mg/dL', interval:[100,240]}},
+	glucose: {us:{unit: 'mg/dL', interval:[72,175]}, human:{unit: 'mg/dL', interval:[64,125]}},
+	calcium: {us:{unit: 'mg/dL', interval:[8.2,11.2]}, human:{unit: 'mg/dL', interval:[8.4,10.2]}},
+	phosphorus: {us:{unit: 'mg/dL', interval:[2.9,6.3]}, human:{unit: 'mg/dL', interval:[2.6,4.5]}},
+	tco2: {us:{unit: 'mmol/L', interval:[12,22]}, human:{unit: 'mmol/L', interval:[20,29]}},
+	chloride: {us:{unit: 'mmol/L', interval:[114,126]}, human:{unit: 'mEq/L', interval:[98,106]}},
+	potassium: {us:{unit: 'mmol/L', interval:[3.7,5.2]}, human:{unit: 'mmol/L', interval:[3.7,5.2]}},
+	sodium: {us:{unit: 'mmol/L', interval:[147,157]}, human:{unit: 'mEq/L', interval:[136,144]}},
+	alb_glob_ratio: {us:{unit: 'ratio', interval:[0.5,1.2]}, human:{unit: '', interval:[]}},
+	bun_creatinine_ratio: {us:{unit: 'ratio', interval:[]}, human:{unit: '', interval:[]}},
+	na_k_ratio: {us:{unit: 'ratio', interval:[29,42]}, human:{unit: '', interval:[]}},
+	anion_gap: {us:{unit: 'mmol/L', interval:[12,25]}, human:{unit: '', interval:[]}},
+	sdma: {us:{unit: 'ug/dL', interval:[0,14]}, human:{unit: '', interval:[]}},
+	wbc: {us:{unit: 'K/uL', interval:[3.9,19]}, human:{unit: 'K/uL', interval:[3.6,11.2]}},
+	rbc: {us:{unit: 'M/uL', interval:[7.12,11.46]}, human:{unit: 'M/uL', interval:[4.5,6]}},
+	hgb: {us:{unit: 'g/dL', interval:[10.3,16.2]}, human:{unit: 'g/dL', interval:[14,18]}},
+	hct: {us:{unit: 'percent', interval:[28.2,52.7]}, human:{unit: 'percent', interval:[38,54]}},
+	mcv: {us:{unit: 'fL', interval:[39,56]}, human:{unit: 'fL', interval:[84,100]}},
+	mch: {us:{unit: 'pg', interval:[12.6,16.5]}, human:{unit: 'pg', interval:[25,35]}},
+	mchc: {us:{unit: 'g/dL', interval:[28.5,37.8]}, human:{unit: 'g/dL', interval:[32,36]}},
+	per_reticulocyte: {us:{unit: 'percent', interval:[]}, human:{unit: '', interval:[]}},
+	reticulocyte: {us:{unit: 'K/uL', interval:[3,50]}, human:{unit: '', interval:[]}},
+	per_neutrophil: {us:{unit: 'percent', interval:[]}, human:{unit: '', interval:[]}},
+	neutrophil: {us:{unit: '/uL', interval:[2620,15170]}, human:{unit: '/uL', interval:[2500,6000]}},
+	per_lymphocyte: {us:{unit: 'percent', interval:[]}, human:{unit: '', interval:[]}},
+	lymphocyte: {us:{unit: '/uL', interval:[850,5850]}, human:{unit: '/uL', interval:[1000,4000]}},
+	per_monocyte: {us:{unit: 'percent', interval:[]}, human:{unit: '', interval:[]}},
+	monocyte: {us:{unit: '/uL', interval:[40,530]}, human:{unit: '/uL', interval:[200,800]}},
+	per_eosinophil: {us:{unit: 'percent', interval:[]}, human:{unit: '', interval:[]}},
+	eosinophil: {us:{unit: '/uL', interval:[90,2180]}, human:{unit: '/uL', interval:[50,300]}},
+	per_basophil: {us:{unit: 'percent', interval:[]}, human:{unit: '', interval:[]}},
+	basophil: {us:{unit: '/uL', interval:[0,100]}, human:{unit: '/uL', interval:[0,100]}},
+	platelet: {us:{unit: 'K/uL', interval:[155,641]}, human:{unit: 'K/uL', interval:[200,500]}}
+}
 
 function getIntervalFor(key, loc){
-	var intervals = {
-		albumin: {us:{unit: 'g/dL', interval:[2.6,3.9]}, international:{unit: '', interval:[]}},
-		totalProtein: {us:{unit: 'g/dL', interval:[6.3,8.8]}, international:{unit: '', interval:[]}},
-		globulin: {us:{unit: 'g/dL', interval:[3.0,5.9]}, international:{unit: '', interval:[]}},
-		bun: {us:{unit: 'mg/dL', interval:[16,37]}, international:{unit: '', interval:[]}},
-		creatinine: {us:{unit: 'mg/dL', interval:[0.9,2.5]}, international:{unit: '', interval:[]}},
-		cholesterol: {us:{unit: 'mg/dL', interval:[91,305]}, international:{unit: '', interval:[]}},
-		glucose: {us:{unit: 'mg/dL', interval:[72,175]}, international:{unit: '', interval:[]}},
-		calcium: {us:{unit: 'mg/dL', interval:[8.2,11.2]}, international:{unit: '', interval:[]}},
-		phosphorus: {us:{unit: 'mg/dL', interval:[2.9,6.3]}, international:{unit: '', interval:[]}},
-		tco2: {us:{unit: 'mmol/L', interval:[12,22]}, international:{unit: '', interval:[]}},
-		chloride: {us:{unit: 'mmol/L', interval:[114,126]}, international:{unit: '', interval:[]}},
-		potassium: {us:{unit: 'mmol/L', interval:[3.7,5.2]}, international:{unit: '', interval:[]}},
-		sodium: {us:{unit: 'mmol/L', interval:[147,157]}, international:{unit: '', interval:[]}},
-		alb_glob_ratio: {us:{unit: 'ratio', interval:[0.5,1.2]}, international:{unit: '', interval:[]}},
-		bun_creatinine_ratio: {us:{unit: 'ratio', interval:[]}, international:{unit: '', interval:[]}},
-		na_k_ratio: {us:{unit: 'ratio', interval:[29,42]}, international:{unit: '', interval:[]}},
-		anion_gap: {us:{unit: 'mmol/L', interval:[12,25]}, international:{unit: '', interval:[]}},
-		sdma: {us:{unit: 'ug/dL', interval:[0,14]}, international:{unit: '', interval:[]}},
-		wbc: {us:{unit: 'K/uL', interval:[3.9,19]}, international:{unit: '', interval:[]}},
-		rbc: {us:{unit: 'M/uL', interval:[7.12,11.46]}, international:{unit: '', interval:[]}},
-		hgb: {us:{unit: 'g/dL', interval:[10.3,16.2]}, international:{unit: '', interval:[]}},
-		hct: {us:{unit: 'percent', interval:[28.2,52.7]}, international:{unit: '', interval:[]}},
-		mcv: {us:{unit: 'fL', interval:[39,56]}, international:{unit: '', interval:[]}},
-		mch: {us:{unit: 'pg', interval:[12.6,16.5]}, international:{unit: '', interval:[]}},
-		mchc: {us:{unit: 'g/dL', interval:[28.5,37.8]}, international:{unit: '', interval:[]}},
-		per_reticulocyte: {us:{unit: 'percent', interval:[]}, international:{unit: '', interval:[]}},
-		reticulocyte: {us:{unit: 'K/uL', interval:[3,50]}, international:{unit: '', interval:[]}},
-		per_neutrophil: {us:{unit: 'percent', interval:[]}, international:{unit: '', interval:[]}},
-		neutrophil: {us:{unit: '/uL', interval:[2620,15170]}, international:{unit: '', interval:[]}},
-		per_lymphocyte: {us:{unit: 'percent', interval:[]}, international:{unit: '', interval:[]}},
-		lymphocyte: {us:{unit: '/uL', interval:[850,5850]}, international:{unit: '', interval:[]}},
-		per_monocyte: {us:{unit: 'percent', interval:[]}, international:{unit: '', interval:[]}},
-		monocyte: {us:{unit: '/uL', interval:[40,530]}, international:{unit: '', interval:[]}},
-		per_eosinophil: {us:{unit: 'percent', interval:[]}, international:{unit: '', interval:[]}},
-		eosinophil: {us:{unit: '/uL', interval:[90,2180]}, international:{unit: '', interval:[]}},
-		per_basophil: {us:{unit: 'percent', interval:[]}, international:{unit: '', interval:[]}},
-		basophil: {us:{unit: '/uL', interval:[0,100]}, international:{unit: '', interval:[]}},
-		platelet: {us:{unit: 'K/uL', interval:[155,641]}, international:{unit: '', interval:[]}}
-	}
+	// credit IDEXX
+	// credit https://library.med.utah.edu/WebPath/EXAM/LABREF.html
+	
 	return intervals[key][loc]
+}
+
+function ensureHuman(req, res, next) {
+	if (req.user.username === process.env.HD) {
+		req.measurements = require('../models/measures.js')({collection: process.env.HD});
+		req.measurements.find({}).lean().exec(function(err, data) {
+			if (err) {
+				return next(err);
+			}
+			for (key in intervals) {
+				for (var i in data) {
+					if (data[i].key === key) {
+						data[i].data.forEach(function(dat){
+							if (!getIntervalFor(key, 'human').interval[1] || !getIntervalFor(key, 'human').interval[0]) {
+								
+							} else {
+								dat.high = getIntervalFor(key, 'human').interval[1];
+								//intervals[key].human.interval[1]
+								dat.low = getIntervalFor(key, 'human').interval[0];//intervals[key].human.interval[0]
+
+							}
+						})
+						req.measurements.findOneAndUpdate({_id: data[i]._id}, {$set: {data: data[i].data}}, {new: true, multi: false}, function(err){
+							if (err) {
+								return next(err)
+							}
+						})
+					}
+				}
+			}
+			
+		})
+	}
+	return next()
 }
 
 function ensureEmbeddedIndex(req, res, next) {
@@ -455,7 +491,7 @@ router.get('/daterange/:namekey/:begin/:end', ensureEmbeddedIndex, function(req,
 	
 });
 
-router.all('/api/*', require('connect-ensure-login').ensureLoggedIn());
+router.all('/api/*', require('connect-ensure-login').ensureLoggedIn(), ensureHuman);
 
 router.get('/api/:namekey/:index/:edit', ensureContent, function(req, res, next){
 	var outputPath = url.parse(req.url).pathname;
