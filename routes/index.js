@@ -72,18 +72,20 @@ function ensureHuman(req, res, next) {
 					if (data[i].key === key) {
 						data[i].data.forEach(function(dat){
 							if (!getIntervalFor(key, 'human').interval[1] || !getIntervalFor(key, 'human').interval[0]) {
-								
+								//console.log('errrrrr', key)
 							} else {
+								//console.log(key)
 								dat.high = getIntervalFor(key, 'human').interval[1];
 								//intervals[key].human.interval[1]
 								dat.low = getIntervalFor(key, 'human').interval[0];//intervals[key].human.interval[0]
 
 							}
 						})
-						req.measurements.findOneAndUpdate({_id: data[i]._id}, {$set: {data: data[i].data}}, {new: true, multi: false}, function(err){
+						req.measurements.findOneAndUpdate({_id: data[i]._id}, {$set: {data: data[i].data}}, {new: true, multi: false}, function(err, doc){
 							if (err) {
 								return next(err)
 							}
+							//console.log(doc.data[0])
 						})
 					}
 				}
