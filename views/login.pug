@@ -7,25 +7,16 @@ block content
 			div.col-xs-9.col-sm-6
 				p Enter username and password
 				form(enctype="multipart/form-data", method="POST", action="/login")
-					div.col-xs-12
-						div.row
-							div.col-xs-12
-								label Username
-							div.col-xs-12
-								input(type="text", name="username")
-					div.col-xs-12
-						div.row
-							div.col-xs-12
-								label Password
-							div.col-xs-12
-								input(type="password", name="password")
-					div.col-xs-12
-						p
+					div.input-group
+						label Username
+						input(type="text", name="username")
+					div.input-group
+						label Password
+						input(type="password", name="password")
+					div.input-group
 						button.btn.btn-primary.btn-block(type="submit", ariaDescription="Log in")
 							span Log in
-						p
-				div.row
-					div.col-xs-12
-						p First time here?
-						a.btn.btn-primary(href="/register", role="button", ariaDescription="Register") 
-							span Register
+				div.input-group
+					label First time here?
+					a.btn.btn-success.btn-block(href="/register", role="button", ariaDescription="Register") 
+						span Register
