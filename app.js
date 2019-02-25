@@ -83,8 +83,8 @@ passport.deserializeUser(function(id, done) {
 var store = new MongoDBStore(
 	{
 		mongooseConnection: mongoose.connection,
-		uri: 'mongodb://localhost/session_ckd',
-		collection: 'mySessions'
+		uri: process.env.DEVDB,
+		collection: 'ckdSession'
 	}
 )
 store.on('error', function(error, next){
