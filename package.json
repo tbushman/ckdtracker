@@ -23,7 +23,7 @@
     "electron-updater": "^2.23.3",
     "express": "^4.16.4",
     "express-session": "^1.13.0",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
     "mongo": "^0.1.0",
